@@ -28,8 +28,8 @@ to navigate to the best match.
 
 %build
 # Install Rust using curl
-#curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-#export PATH="$PATH:$HOME/.cargo/bin"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+export PATH="$PATH:$HOME/.cargo/bin"
 cargo build --release
 strip --strip-all target/release/%{name}
 upx target/release/%{name}
