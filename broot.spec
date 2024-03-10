@@ -1,5 +1,5 @@
 %define name broot
-%define version 1.35.0
+%define version 1.36.0
 %define release 1%{?dist}
 
 Summary:  Fast cd command that learns your habits
