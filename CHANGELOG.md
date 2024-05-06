@@ -1,3 +1,8 @@
+### v1.38.0 - 2024-05-04
+<a name="v1.38.0"></a>
+- `-{flags}` verb lets you change the state the same way you do it at start, eg `:-sd` to show sizes and dates
+- calling `:focus` on the tree root now goes up the tree (experimental)
+
 ### v1.37.0 - 2024-04-28
 <a name="v1.37.0"></a>
 - optionally display lines surrounding a matching line in preview, with `lines_before_match_in_preview` and  `lines_after_match_in_preview` - Fix #756
