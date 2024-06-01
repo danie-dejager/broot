@@ -25,6 +25,7 @@ use {
 /// - if only one verb name starts with the input
 pub struct VerbStore {
     verbs: Vec<Verb>,
+    unbound_keys: Vec<KeyCombination>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,7 +37,7 @@ pub enum PrefixSearchResult<'v, T> {
 
 impl VerbStore {
     pub fn new(conf: &mut Conf) -> Result<Self, ConfError> {
-        let mut store = Self { verbs: Vec::new() };
+        let mut store = Self { verbs: Vec::new(), unbound_keys: Vec::new() };
         for vc in &conf.verbs {
             if let Err(e) = store.add_from_conf(vc) {
                 eprintln!("Invalid verb configuration: {}", e);
@@ -51,6 +52,9 @@ impl VerbStore {
             }
         }
         store.add_builtin_verbs()?; // at the end so that we can override them
+        for key in store.unbound_keys.clone() {
+            store.unbind_key(key)?;
+        }
         Ok(store)
     }
 
@@ -147,6 +151,20 @@ impl VerbStore {
             StayInBroot,
         )
             .with_shortcut("cpp");
+        #[cfg(feature = "trash")]
+        self.add_internal(trash);
+        #[cfg(feature = "trash")]
+        self.add_internal(open_trash)
+            .with_shortcut("ot");
+        #[cfg(feature = "trash")]
+        self.add_internal(restore_trashed_file)
+            .with_shortcut("rt");
+        #[cfg(feature = "trash")]
+        self.add_internal(delete_trashed_file)
+            .with_shortcut("dt");
+        #[cfg(feature = "trash")]
+        self.add_internal(purge_trash)
+            .with_shortcut("et");
         #[cfg(unix)]
         self.add_internal(filesystems)
             .with_shortcut("fs");
@@ -311,7 +329,6 @@ impl VerbStore {
         self.add_internal(toggle_perm).with_shortcut("perm");
         self.add_internal(toggle_sizes).with_shortcut("sizes");
         self.add_internal(toggle_trim_root);
-        self.add_internal(trash);
         self.add_internal(total_search).with_key(key!(ctrl-s));
         self.add_internal(up_tree).with_shortcut("up");
 
@@ -389,6 +406,23 @@ impl VerbStore {
                 details: "You can't simultaneously have leave_broot=false and from_shell=true".to_string(),
             });
         }
+
+        // we accept both key and keys. We merge both here
+        let mut unchecked_keys = vc.keys.clone();
+        if let Some(key) = &vc.key {
+            unchecked_keys.push(key.clone());
+        }
+        let mut checked_keys = Vec::new();
+        for key in &unchecked_keys {
+            let key = crokey::parse(key)?;
+            if keys::is_reserved(key) {
+                return Err(ConfError::ReservedKey {
+                    key: keys::KEY_FORMAT.to_string(key)
+                });
+            }
+            checked_keys.push(key);
+        }
+
         let invocation = vc.invocation.clone().filter(|i| !i.is_empty());
         let internal = vc.internal.as_ref().filter(|i| !i.is_empty());
         let external = vc.external.as_ref().filter(|i| !i.is_empty());
@@ -443,9 +477,12 @@ impl VerbStore {
                 sequence: Sequence::new(s, cmd_separator),
             }),
             _ => {
-                return Err(ConfError::InvalidVerbConf {
-                    details: "You must define either internal, external or cmd".to_string(),
-                });
+                // there's no execution, this 'verbconf' is supposed to be dedicated to
+                // unbind keys
+                for key in checked_keys {
+                    self.unbound_keys.push(key);
+                }
+                return Ok(());
             }
         };
         let description = vc
@@ -458,21 +495,6 @@ impl VerbStore {
             execution,
             description,
         )?;
-        // we accept both key and keys. We merge both here
-        let mut unchecked_keys = vc.keys.clone();
-        if let Some(key) = &vc.key {
-            unchecked_keys.push(key.clone());
-        }
-        let mut checked_keys = Vec::new();
-        for key in &unchecked_keys {
-            let key = crokey::parse(key)?;
-            if keys::is_reserved(key) {
-                return Err(ConfError::ReservedKey {
-                    key: keys::KEY_FORMAT.to_string(key)
-                });
-            }
-            checked_keys.push(key);
-        }
         for extension in &vc.extensions {
             verb.file_extensions.push(extension.clone());
         }
@@ -489,6 +511,26 @@ impl VerbStore {
             verb.panels.clone_from(&vc.panels);
         }
         verb.selection_condition = vc.apply_to;
+        Ok(())
+    }
+
+    pub fn unbind_key(
+        &mut self,
+        key: KeyCombination,
+    ) -> Result<(), ConfError> {
+        debug!("unbinding key {:?}", key);
+        for verb in &mut self.verbs {
+            verb.keys.retain(|&k| k != key);
+        }
+        Ok(())
+    }
+    pub fn unbind_name(
+        &mut self,
+        name: &str,
+    ) -> Result<(), ConfError> {
+        for verb in &mut self.verbs {
+            verb.names.retain(|n| n != name);
+        }
         Ok(())
     }
 

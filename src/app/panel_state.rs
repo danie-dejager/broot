@@ -112,7 +112,7 @@ pub trait PanelState {
             .unwrap_or(internal_exec.bang);
         Ok(match internal_exec.internal {
             Internal::apply_flags => {
-                info!("applying flags input_invocation: {:#?}", input_invocation);
+                debug!("applying flags input_invocation: {:#?}", input_invocation);
                 let flags = input_invocation.and_then(|inv| inv.args.as_ref());
                 if let Some(flags) = flags {
                     self.with_new_options(
@@ -157,6 +157,41 @@ pub trait PanelState {
                 validate_purpose: false,
                 panel_ref: PanelReference::Active,
             },
+            #[cfg(feature = "trash")]
+            Internal::purge_trash => {
+                let res = trash::os_limited::list()
+                    .and_then(|items| {
+                        trash::os_limited::purge_all(items)
+                    });
+                match res {
+                    Ok(()) => CmdResult::RefreshState { clear_cache: false },
+                    Err(e) => CmdResult::DisplayError(format!("{e}")),
+                }
+            }
+            #[cfg(feature = "trash")]
+            Internal::open_trash => {
+                let trash_state = crate::trash::TrashState::new(
+                    self.tree_options(),
+                    con,
+                );
+                match trash_state {
+                    Ok(state) => {
+                        let bang = input_invocation
+                            .map(|inv| inv.bang)
+                            .unwrap_or(internal_exec.bang);
+                        if bang && cc.app.preview_panel.is_none() {
+                            CmdResult::NewPanel {
+                                state: Box::new(state),
+                                purpose: PanelPurpose::None,
+                                direction: HDir::Right,
+                            }
+                        } else {
+                            CmdResult::new_state(Box::new(state))
+                        }
+                    }
+                    Err(e) => CmdResult::DisplayError(format!("{e}")),
+                }
+            }
             #[cfg(unix)]
             Internal::filesystems => {
                 let fs_state = crate::filesystems::FilesystemState::new(
@@ -1005,7 +1040,6 @@ pub trait PanelState {
                     )
                 } else {
                     let sel_info = self.sel_info(app_state);
-                    info!("invocation: {:#?}", invocation);
                     match cc.app.con.verb_store.search_sel_info(
                         &invocation.name,
                         sel_info,
