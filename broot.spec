@@ -1,5 +1,5 @@
 %define name broot
-%define version 1.39.0
+%define version 1.39.1
 %define release 1%{?dist}
 
 Summary:  Fast cd command that learns your habits
@@ -44,6 +44,7 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 %{_bindir}/%{name}
 
 %changelog
+* Sat Jul 7 2024 Danie de Jager - 1.39.1-1 
 * Sat Jun 1 2024 Danie de Jager - 1.39.0-1 
 * Mon May 6 2024 Danie de Jager - 1.38.0-1 
 * Mon Apr 29 2024 Danie de Jager - 1.37.0-1 
