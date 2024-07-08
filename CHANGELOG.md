@@ -1,3 +1,7 @@
+### v1.39.2 - 2024-07-08
+<a name="v1.39.2"></a>
+- fix UNC paths being displayed on Windows (regression at 1.39.1) - Fix #812 (again)
+
 ### v1.39.1 - 2024-07-05
 <a name="v1.39.1"></a>
 - fix high-resolution (kitty protocole) image broken in release mode - Fix #885
