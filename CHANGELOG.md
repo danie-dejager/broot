@@ -1,3 +1,14 @@
+### v1.40.0 - 2024-07-16
+<a name="v1.40.0"></a>
+#### Major Feature: preview transformers
+You can now define preview transformers to be applied before preview.
+They allow for example previewing PDF or Office files, or beautifying JSON files.
+Edit the `preview_transformers` array in your conf.hjson file.
+See https://dystroy.org/broot/conf_file/#preview
+#### Fixes
+- fix search on root - Fix #904
+- fix some verb cycling problems - Fix #902
+
 ### v1.39.2 - 2024-07-08
 <a name="v1.39.2"></a>
 - fix UNC paths being displayed on Windows (regression at 1.39.1) - Fix #812 (again)
