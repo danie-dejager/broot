@@ -19,7 +19,9 @@ use {
 /// Provide access to the verbs:
 /// - the built-in ones
 /// - the user defined ones
+///
 /// A user defined verb can replace a built-in.
+///
 /// When the user types some keys, we select a verb
 /// - if the input exactly matches a shortcut or the name
 /// - if only one verb name starts with the input
@@ -87,6 +89,8 @@ impl VerbStore {
         // changing display
         self.add_internal(set_syntax_theme);
         self.add_internal(apply_flags).with_name("apply_flags")?;
+        self.add_internal(set_panel_width);
+        self.add_internal(default_layout);
 
         // those two operations are mapped on ALT-ENTER, one
         // for directories and the other one for the other files
@@ -329,8 +333,12 @@ impl VerbStore {
         self.add_internal(toggle_perm).with_shortcut("perm");
         self.add_internal(toggle_sizes).with_shortcut("sizes");
         self.add_internal(toggle_trim_root);
-        self.add_internal(total_search).with_key(key!(ctrl-s));
+        self.add_internal(total_search);
+        self.add_internal(search_again).with_key(key!(ctrl-s));
         self.add_internal(up_tree).with_shortcut("up");
+
+        self.add_internal_with_args(move_panel_divider, "0 1").with_key(key!(alt-'>'));
+        self.add_internal_with_args(move_panel_divider, "0 -1").with_key(key!(alt-'<'));
 
         self.add_internal(clear_output);
         self.add_internal(write_output);
@@ -355,6 +363,24 @@ impl VerbStore {
         internal: Internal,
     ) -> &mut Verb {
         self.build_add_internal(internal, false)
+    }
+
+    fn add_internal_with_args(
+        &mut self,
+        internal: Internal,
+        args: &str,
+    ) -> &mut Verb {
+        let command =
+            format!("{} {}", internal.name(), args);
+        let execution = VerbExecution::Internal(
+            InternalExecution {
+                internal,
+                bang: false,
+                arg: Some(args.to_string()),
+            }
+        );
+        let description = VerbDescription::from_text(command.clone());
+        self.add_verb(Some(&command), execution, description).unwrap()
     }
 
      fn add_internal_bang(

@@ -1,3 +1,25 @@
+### v1.41.1 - 2024-08-04
+<a name="v1.41.1"></a>
+- allow compilation with rustc 1.76 - Fix #925
+
+### v1.41.0 - 2024-08-04
+<a name="v1.41.0"></a>
+#### Major Feature: :search_again
+ctrl-s now triggers `:search_again` which either
+- brings back the last used search pattern, when no filtering pattern is active
+- does a "total search" if a filtering pattern is active and the search wasn't complete
+#### Major Feature: internals changing panel widths
+* `set_panel_width`, taking as parameter the index of the panel and the desired width
+* `move_panel_divider`, taking as parameter the index of the divider and the desired change
+`ctrl-<` is bound by default to `:move_panel_divider 0 -1`
+`ctrl->` is bound by default to `:move_panel_divider 0 1`
+See http://dystroy.org/broot/panels/#resize-panels
+#### Minor Changes:
+- when git file infos are shown, and git ignored files aren't hidden, those files are flagged with a 'I' - Fix #916
+- Remove .bak extension from content search exclusion list - Fix #915
+- Update nerdfont and vscode icons - Thanks @jpaju
+- `{initial-root}` verb argument
+
 ### v1.40.0 - 2024-07-16
 <a name="v1.40.0"></a>
 #### Major Feature: preview transformers

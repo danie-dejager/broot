@@ -72,7 +72,7 @@ impl PanelInput {
     /// consume the event to
     /// - maybe change the input
     /// - build a command
-    /// then redraw the input field
+    ///   then redraw the input field
     #[allow(clippy::too_many_arguments)]
     pub fn on_event(
         &mut self,
@@ -285,7 +285,7 @@ impl PanelInput {
         sel_info: SelInfo<'_>,
         panel_state_type: PanelStateType,
     ) -> Option<&'c Verb> {
-        for verb in con.verb_store.verbs().iter() {
+        for verb in con.verb_store.verbs() {
             // note that there can be several verbs with the same key and
             // not all of them can apply
             if !verb.keys.contains(&key) {
@@ -449,7 +449,8 @@ impl PanelInput {
                     app_state,
                 );
                 let verb_invocation = exec_builder.invocation_with_default(
-                    &invocation_parser.invocation_pattern
+                    &invocation_parser.invocation_pattern,
+                    con,
                 );
                 let mut parts = parts;
                 parts.verb_invocation = Some(verb_invocation);

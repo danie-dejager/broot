@@ -302,6 +302,7 @@ name | expanded to
 `{other-panel-parent}` | complete path of the current selection's parent in the other panel
 `{other-panel-directory}` | closest directory, either `{file}` or `{parent}` in the other panel
 `{root}` | current tree root (top of the displayed files tree)
+`{initial-root}` | tree root at launch
 `{git-root}` | The working directory of the Git repository containing the current selection
 `{git-name}` | Name of the working directory of the current Git repository
 `{file-git-relative}` | path of the current selection relative to the working directory of the containing Git repository. If the selection is not in a Git repository then the absolute path.
@@ -385,6 +386,7 @@ Here's a list of internals: builtin actions you can add an alternate shortcut or
 invocation | default key | default shortcut | behavior / details
 -|-|-|-
 :back | <kbd>left</kbd> | - | back to previous app state |
+:default_layout | - | - | restore the default panel sizes
 :clear_stage | - | cls | empty the staging area
 :close_panel_cancel | - | - | close the panel, not using the selected path
 :close_panel_ok | - | - | close the panel, validating the selected path
@@ -400,6 +402,7 @@ invocation | default key | default shortcut | behavior / details
 :line_down_no_cycle | - | - | same as line_down, but doesn't cycle
 :line_up | <kbd>↑</kbd> | - | scroll one line up or select the previous line
 :line_up_no_cycle | - | - | same as line_up, but doesn't cycle
+:move_panel_divider | - | - | ex: `:move_panel_divider 0 -5` reduces the size of the left panel by 5 "characters" (while growing the right panel by 5)
 :next_dir | - | - | select the next directory
 :next_match | <kbd>tab</kbd> | - | select the next matching file, or matching verb or path in auto-completion
 :next_same_depth | - | - | select the next file at the same depth
@@ -428,10 +431,12 @@ invocation | default key | default shortcut | behavior / details
 :quit | <kbd>ctrl</kbd><kbd>q</kbd> | q | quit broot
 :refresh | <kbd>F5</kbd> | - | refresh the displayed tree and clears the directory sizes cache
 :root_down | - | - | move tree root down
-:root_up | - | - | "move tree root up"
+:root_up | - | - | move tree root up
+:search_again | - | <kbd>ctrl</kbd><kbd>s</kbd> | either put back last search, or search deeper
 :select | - | - | select a path given as argument, if it's in the visible tree
 :select_first | - | - | select the first line
 :select_last | - | - | select the last line
+:set_panel_width | - | - | ex: `:set_panel_width 1 150` sets the width of the second panel to 150 "characters"
 :set_syntax_theme | - | - | set the [syntect theme](../conf_file/#syntax-theme) of code preview, eg `:set SolarizedDark`
 :sort_by_count | - | sc | sort by count (only one level of the tree is displayed)
 :sort_by_date | - | sd | sort by date
@@ -460,7 +465,7 @@ invocation | default key | default shortcut | behavior / details
 :toggle_staging_area | - | tsa | open/close the staging area panel
 :toggle_tree | - | - | toggle showing only one level of the tree (when not affected by sorting)
 :toggle_trim_root | - | - | toggle trimming of top level files in tree display
-:total_search | - | <kbd>ctrl</kbd><kbd>s</kbd> | search again but on all children instead of stopping when the results look good enough
+:total_search | - | - | search again but on all children instead of stopping when the results look good enough
 :trash | - | - | move file to system trash
 :unstage | <kbd>-</kbd> | - | remove selection from staging area
 :up_tree | - | - | focus the parent of the current root

@@ -5,6 +5,7 @@ use {
         cli::{Args, TriBool},
         conf::*,
         content_search,
+        display::LayoutInstructions,
         errors::*,
         file_sum,
         icon::*,
@@ -131,6 +132,9 @@ pub struct AppContext {
 
     /// The set of transformers called before previewing a file
     pub preview_transformers: PreviewTransformers,
+
+    /// layout modifiers, like divider moves
+    pub layout_instructions: LayoutInstructions,
 }
 
 impl AppContext {
@@ -159,7 +163,7 @@ impl AppContext {
         let search_modes = config
             .search_modes
             .as_ref()
-            .map(|map| map.try_into())
+            .map(TryInto::try_into)
             .transpose()?
             .unwrap_or_default();
         let ext_colors = ExtColorMap::try_from(&config.ext_colors)
@@ -200,8 +204,8 @@ impl AppContext {
             .unwrap_or(content_search::DEFAULT_MAX_FILE_SIZE);
 
         let terminal_title_pattern = config.terminal_title.clone();
-
         let preview_transformers = PreviewTransformers::new(&config.preview_transformers)?;
+        let layout_instructions = config.layout_instructions.clone().unwrap_or_default();
 
         Ok(Self {
             is_tty,
@@ -236,6 +240,7 @@ impl AppContext {
             lines_after_match_in_preview: config.lines_after_match_in_preview.unwrap_or(0),
             lines_before_match_in_preview: config.lines_before_match_in_preview.unwrap_or(0),
             preview_transformers,
+            layout_instructions,
         })
     }
     /// Return the --cmd argument, coming from the launch arguments (prefered)
@@ -243,7 +248,7 @@ impl AppContext {
     pub fn cmd(&self) -> Option<&str> {
         self.launch_args.cmd.as_ref().or(
             self.config_default_args.as_ref().and_then(|args| args.cmd.as_ref())
-        ).map(|s| s.as_str())
+        ).map(String::as_str)
     }
     pub fn initial_mode(&self) -> Mode {
         if self.modal {
@@ -251,6 +256,17 @@ impl AppContext {
         } else {
             Mode::Input
         }
+    }
+}
+
+/// An unsafe implementation of Default, for tests only
+#[cfg(test)]
+impl Default for AppContext {
+    fn default() -> Self {
+        let mut config = Conf::default();
+        let verb_store = VerbStore::new(&mut config).unwrap();
+        let launch_args = parse_default_flags("").unwrap();
+        Self::from(launch_args, verb_store, &config).unwrap()
     }
 }
 

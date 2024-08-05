@@ -2,12 +2,12 @@ use {
     super::*,
     crate::{
         command::*,
-        display::{Screen, W},
+        display::*,
         errors::ProgramError,
         flag::Flag,
         help::HelpState,
         pattern::*,
-        preview::{PreviewMode, PreviewState},
+        preview::*,
         print,
         stage::*,
         task_sync::Dam,
@@ -157,6 +157,25 @@ pub trait PanelState {
                 validate_purpose: false,
                 panel_ref: PanelReference::Active,
             },
+            Internal::move_panel_divider => {
+                let MoveDividerArgs { divider, dx } = get_arg(
+                    input_invocation,
+                    internal_exec,
+                    MoveDividerArgs { divider: 0, dx: 1 },
+                );
+                CmdResult::ChangeLayout(LayoutInstruction::MoveDivider { divider, dx })
+            }
+            Internal::default_layout => {
+                CmdResult::ChangeLayout(LayoutInstruction::Clear)
+            }
+            Internal::set_panel_width => {
+                let SetPanelWidthArgs { panel, width } = get_arg(
+                    input_invocation,
+                    internal_exec,
+                    SetPanelWidthArgs { panel: 0, width: 100 },
+                );
+                CmdResult::ChangeLayout(LayoutInstruction::SetPanelWidth { panel, width })
+            }
             #[cfg(feature = "trash")]
             Internal::purge_trash => {
                 let res = trash::os_limited::list()
@@ -649,13 +668,12 @@ pub trait PanelState {
                     }
                 };
                 if let Some(pattern) = internal_exec.arg.as_ref() {
-                    let line = exec_builder.string(pattern);
+                    let line = exec_builder.string(pattern, con);
                     verb_write(con, &line)?;
                 } else {
                     let line = input_invocation
                         .and_then(|inv| inv.args.as_ref())
-                        .map(|s| s.as_str())
-                        .unwrap_or("");
+                        .map_or("", String::as_str);
                     verb_write(con, line)?;
                 }
                 CmdResult::Keep
@@ -828,7 +846,7 @@ pub trait PanelState {
                 None
             },
         );
-        let sequence = exec_builder.sequence(&seq_ex.sequence, &cc.app.con.verb_store);
+        let sequence = exec_builder.sequence(&seq_ex.sequence, &cc.app.con.verb_store, cc.app.con);
         Ok(CmdResult::ExecuteSequence { sequence })
     }
 
@@ -1073,7 +1091,7 @@ pub trait PanelState {
         verb: &Verb,
         invocation: &VerbInvocation,
         sel_info: SelInfo<'_>,
-        _cc: &CmdContext,
+        cc: &CmdContext,
         app_state: &AppState,
     ) -> Status {
         if sel_info.count_paths() > 1 {
@@ -1095,6 +1113,7 @@ pub trait PanelState {
                     sel_info,
                     app_state,
                     invocation,
+                    cc.app.con,
                 ),
                 false,
             )
@@ -1114,4 +1133,5 @@ pub fn get_arg<T: Copy + FromStr>(
         .and_then(|s| s.parse::<T>().ok())
         .unwrap_or(default)
 }
+
 

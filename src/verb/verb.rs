@@ -21,14 +21,17 @@ use {
 /// Verbs are the engines of broot commands, and apply
 /// - to the selected file (if user-defined, then must contain {file}, {parent} or {directory})
 /// - to the current app state
+///
 /// There are two types of verbs executions:
 /// - external programs or commands (cd, mkdir, user defined commands, etc.)
 /// - internal behaviors (focusing a path, going back, showing the help, etc.)
+///
 /// Some verbs are builtins, some other ones are created by configuration.
+///
 /// Both builtins and configured vers can be internal or external based.
 ///
 /// Verbs can't be cloned. Two verbs are equal if they have the same address
-/// in memory.
+///   in memory.
 #[derive(Debug)]
 pub struct Verb {
 
@@ -227,6 +230,7 @@ impl Verb {
         sel_info: SelInfo<'_>,
         app_state: &AppState,
         invocation: &VerbInvocation,
+        con: &AppContext,
     ) -> String {
         let name = self.names.first().unwrap_or(&invocation.name);
 
@@ -243,6 +247,7 @@ impl Verb {
                     sel_info,
                     invocation,
                     app_state,
+                    con,
                 );
             }
         }
@@ -257,11 +262,12 @@ impl Verb {
         };
         if let VerbExecution::Sequence(seq_ex) = &self.execution {
             let exec_desc = builder().shell_exec_string(
-                &ExecPattern::from_string(&seq_ex.sequence.raw)
+                &ExecPattern::from_string(&seq_ex.sequence.raw),
+                con,
             );
             format!("Hit *enter* to **{}**: `{}`", name, &exec_desc)
         } else if let VerbExecution::External(external_exec) = &self.execution {
-            let exec_desc = builder().shell_exec_string(&external_exec.exec_pattern);
+            let exec_desc = builder().shell_exec_string(&external_exec.exec_pattern, con);
             format!("Hit *enter* to **{}**: `{}`", name, &exec_desc)
         } else if self.description.code {
             format!("Hit *enter* to **{}**: `{}`", name, &self.description.content)
