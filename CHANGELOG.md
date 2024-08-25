@@ -1,3 +1,13 @@
+### next
+- 'Size' and 'Deletion date' columns in trash screen. This screen now supports the `:toggle_date`, `:toggle_size`, `:sort_by_date`, and `:sort_by_size` internals.
+
+### v1.42.0 - 2024-08-18
+<a name="v1.42.0"></a>
+- support of `.ignore` files with the same syntax than `.gitignore`. They have priority over `.gitignore` so that a personal `.ignore` file can override a shared `.gitignore` - See https://dystroy.org/broot/tree_view/#hidden-ignored-files - Fix #613
+- `:toggle_ignore` internal, identical to `:toggle_git_ignore`, but with a clearer name so should be preferred
+- the `panels` verb filter now works in most contexts (it was previously only checked on key events)
+- many dependencies updated
+
 ### v1.41.1 - 2024-08-04
 <a name="v1.41.1"></a>
 - allow compilation with rustc 1.76 - Fix #925
