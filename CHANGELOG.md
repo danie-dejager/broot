@@ -1,3 +1,8 @@
+### v1.44.0 - 2024-09-07
+<a name="v1.44.0"></a>
+- `:focus_staging_area_no_open` internal, focus the staging area if it's already open, does nothing in other case - Fix #926
+- fix some composite patterns with several operators and no parenthesis
+
 ### v1.43.0 - 2024-08-30
 <a name="v1.43.0"></a>
 - 'Size' and 'Deletion date' columns in trash screen. This screen now supports the `:toggle_date`, `:toggle_size`, `:sort_by_date`, and `:sort_by_size` internals.
