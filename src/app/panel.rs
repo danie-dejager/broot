@@ -202,7 +202,7 @@ impl Panel {
         &mut self,
         w: &mut W,
         disc: &DisplayContext,
-    ) -> Result<(), ProgramError> {
+    ) -> Result<Option<(u16, u16)>, ProgramError> {
         self.mut_state().display(w, disc)?;
         if disc.active || !WIDE_STATUS {
             self.write_status(w, disc.panel_skin, disc.screen)?;
@@ -219,8 +219,14 @@ impl Panel {
                 flags_display::write(w, &flags, disc.panel_skin)?;
             }
         }
-        self.input.display(w, disc.active, self.state().get_mode(), input_area, disc.panel_skin)?;
-        Ok(())
+        let cursor_pos = self.input.display(
+            w,
+            disc.active,
+            self.state().get_mode(),
+            input_area,
+            disc.panel_skin,
+        )?;
+        Ok(cursor_pos)
     }
 
     fn write_status(

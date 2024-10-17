@@ -55,7 +55,7 @@ impl PanelInput {
         mode: Mode,
         mut area: Area,
         panel_skin: &PanelSkin,
-    ) -> Result<(), ProgramError> {
+    ) -> Result<Option<(u16, u16)>, ProgramError> {
         self.input_field.set_normal_style(panel_skin.styles.input.clone());
         self.input_field.set_focus(active && mode == Mode::Input);
         if mode == Mode::Command && active {
@@ -65,8 +65,8 @@ impl PanelInput {
             area.left += 1;
         }
         self.input_field.set_area(area);
-        self.input_field.display_on(w)?;
-        Ok(())
+        let cursor_pos = self.input_field.display_on(w)?;
+        Ok(cursor_pos)
     }
 
     /// consume the event to

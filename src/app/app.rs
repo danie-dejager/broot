@@ -27,7 +27,11 @@ use {
         terminal,
         verb::Internal,
     },
-    crokey::crossterm::event::Event,
+    crokey::crossterm::{
+        cursor::MoveTo,
+        event::Event,
+        queue,
+    },
     crossbeam::channel::{
         unbounded,
         Receiver,
@@ -246,6 +250,7 @@ impl App {
         con: &AppContext,
     ) -> Result<(), ProgramError> {
         self.drawing_count += 1;
+        let mut cursor_pos = None;
         for (idx, panel) in self.panels.as_mut_slice().iter_mut().enumerate() {
             let active = idx == self.active_panel_idx;
             let panel_skin = if active {
@@ -262,8 +267,17 @@ impl App {
                 app_state,
                 con,
             };
-            time!("display panel", panel.display(w, &disc)?,);
+            if let Some(pos) = time!("display panel", panel.display(w, &disc)?,) {
+                cursor_pos = Some(pos)
+            }
         }
+
+        // after drawing all the panels, move cursor to the end of the active panel input,
+        // so that input methods can popup at correct position.
+        if let Some((left, top)) = cursor_pos {
+            queue!(w, MoveTo(left, top))?;
+        }
+
         kitty::manager()
             .lock()
             .unwrap()
@@ -937,8 +951,8 @@ impl App {
 }
 
 /// clear the file sizes and git stats cache.
-/// This should be done on Refresh actions and after any external
-/// command.
+///
+/// This should be done on Refresh actions and after any external command.
 fn clear_caches() {
     file_sum::clear_cache();
     git::clear_status_computer_cache();
