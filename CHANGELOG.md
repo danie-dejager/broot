@@ -1,3 +1,16 @@
+### next
+- removed default bindings on left and right keys. You may add them back by adding this to your verbs.hjson:
+```Hjson
+    { key: "left", internal: "back" }
+    { key: "right", internal: "open_stay" }
+```
+
+### v1.44.2 - 2024-10-22
+<a name="v1.44.2"></a>
+- temp files created for kitty now erased on quitting or when too many of them have been written
+- no longer panics when launched with BROOT_LOG=debug but the broot.log file can't be created - Fix #951
+- fix user and group names displayed as "????" when coming from openldap - Fix #953
+
 ### v1.44.1 - 2024-10-16
 <a name="v1.44.1"></a>
 - fix wrong position of IMEs (input method editors) popup - thanks @xubaiwang - See #948

@@ -1,6 +1,6 @@
 [package]
 name = "broot"
-version = "1.44.1"
+version = "1.44.3-dev"
 authors = ["dystroy <denys.seguret@gmail.com>"]
 repository = "https://github.com/Canop/broot"
 homepage = "https://dystroy.org/broot"
@@ -29,7 +29,7 @@ char_reader = "0.1"
 chrono = "0.4"
 clap = { version = "4.4", features = ["derive", "cargo"] }
 clap-help = "1.3"
-cli-log = "2.0"
+cli-log = "2.1"
 crokey = "1.1"
 crossbeam = "0.8"
 custom_error = "1.6"
@@ -44,6 +44,7 @@ image = "0.24"
 include_dir = "0.7"
 lazy-regex = "3.3"
 libc = "0.2"
+lru = "0.12"
 memmap2 = "0.9"
 once_cell = "1.18" # waiting for https://github.com/rust-lang/rust/issues/109736
 opener = "0.6"
@@ -51,7 +52,7 @@ pathdiff = "0.2"
 phf = { version = "0.11", features = ["macros"] }
 rayon = "1.9"
 resvg = "0.36" # several options behind, as it's always a PITA to upgrade
-rustc-hash = "1" 
+rustc-hash = "2" 
 secular = { version = "1.0", features = ["normalization", "bmp"] }
 serde = { version = "1.0", features = ["derive"] }
 smallvec = "1.11" # version 2 is still alpha
@@ -74,7 +75,7 @@ glassbench = "0.4.3"
 
 [target.'cfg(unix)'.dependencies]
 lfs-core = "0.11.0"
-uzers = "0.11.3"
+uzers = "0.12"
 
 [target.'cfg(windows)'.dependencies]
 is_executable = "1.0.1"
@@ -91,7 +92,7 @@ debug = false
 debug = false
 lto = "fat"
 codegen-units = 1 # this removes a few hundred bytes from the final exec size
-strip = true
+strip = "symbols"
 
 [[bench]]
 name = "fuzzy"
@@ -109,7 +110,7 @@ harness = false
 [patch.crates-io]
 # bet = { path = "../bet" }
 # clap-help = { path = "../clap-help" }
-# cli-log = { path = "../cli-log" }
+# cli-log = { path = "../cli-log" }
 # coolor = { path = "../coolor" }
 # crossterm = { path = "../crossterm-rs/crossterm" }
 # csv2svg = { path = "../csv2svg" }
