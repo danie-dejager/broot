@@ -1,6 +1,6 @@
 %define name broot
 %define version 1.44.6
-%define release 1%{?dist}
+%define release 2%{?dist}
 
 Summary:  Fast cd command that learns your habits
 Name:     %{name}
@@ -44,6 +44,8 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 %{_bindir}/%{name}
 
 %changelog
+* Thu Feb 6 2025 - Danie de Jager - 1.44.6-2
+- Rebuilt with rustc 1.84.1
 * Sun Jan 12 2025 - Danie de Jager - 1.44.6-1
 * Fri Jan 3 2025 - Danie de Jager - 1.44.5-1
 * Sat Dec 28 2024 - Danie de Jager - 1.44.3-1
