@@ -1,3 +1,10 @@
+### next
+- `:set_max_depth <number>` and `:unset_max_depth` - Fix #843 - Thanks @mcky
+
+### v1.45.1 - 2025-03-25
+<a name="v1.45.1"></a>
+- Fix compilation failing without `--locked` - Fix #995
+
 ### v1.45.0 - 2025-03-17
 <a name="v1.45.0"></a>
 -  Fix total search impossible to redo after refresh - Fix #986

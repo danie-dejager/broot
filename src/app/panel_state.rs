@@ -482,6 +482,38 @@ pub trait PanelState {
 					con,
 				)
             }
+            Internal::set_max_depth => {
+                let args = input_invocation.and_then(|inv| inv.args.as_ref());
+
+                if let Some(flags) = args {
+                    self.with_new_options(
+                        screen,
+                        &|o| {
+                            if let Ok(max_depth) = flags.parse::<u16>() {
+                                o.max_depth = Some(max_depth);
+                                "*max depth updated*"
+                            } else {
+                                "*depth must be an integer*"
+                            }
+                        },
+                        bang,
+                        con,
+                    )
+                } else {
+                    CmdResult::error(":set_max_depth needs a depth as an argument")
+                }
+            }
+            Internal::unset_max_depth => {
+                self.with_new_options(
+                        screen,
+                        &|o| {
+                        o.max_depth = None;
+                        "*cleared max depth*"
+                    },
+                    bang,
+                    con,
+                )
+            }
             Internal::toggle_git_ignore | Internal::toggle_ignore => {
                 self.with_new_options(
 					screen,
@@ -685,6 +717,9 @@ pub trait PanelState {
                 }
                 CmdResult::Keep
             }
+            internal if internal.is_input_related() => {
+                CmdResult::HandleInApp(internal)
+            }
             _ => CmdResult::Keep,
         })
     }
@@ -869,6 +904,7 @@ pub trait PanelState {
         app_state: &mut AppState,
         cc: &CmdContext,
     ) -> Result<CmdResult, ProgramError> {
+        info!("panel_state on_command {:?}", cc.cmd);
         self.clear_pending();
         let con = &cc.app.con;
         let screen = cc.app.screen;
@@ -1117,7 +1153,7 @@ pub trait PanelState {
                     );
                 }
             }
-            // right now there's no check for sequences but they're inherently dangereous
+            // right now there's no check for sequences but they're inherently dangerous
         }
         if let Some(err) = verb.check_args(sel_info, invocation, &app_state.other_panel_path) {
             Status::new(err, true)
