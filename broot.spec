@@ -59,7 +59,7 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 
 %changelog
 * Sun Apr 6 2025 - Danie de Jager - 1.45.1-1
-- Switched to using system Rust toolchain
+- Switched to using system Rust toolchain for al2023.
 * Thu Feb 13 2025 - Danie de Jager - 1.44.7-1
 * Thu Feb 6 2025 - Danie de Jager - 1.44.6-2
 - Rebuilt with rustc 1.84.1
@@ -67,7 +67,6 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 * Fri Jan 3 2025 - Danie de Jager - 1.44.5-1
 * Sat Dec 28 2024 - Danie de Jager - 1.44.3-1
 * Fri Dec 20 2024 - Danie de Jager - 1.44.2-2
-* Thu Oct 22 2024 - Danie de Jager - 1.44.2-1
 * Thu Oct 17 2024 - Danie de Jager - 1.44.1-1
 * Thu Sep 12 2024 - Danie de Jager - 1.44.0-1
 * Sun Aug 25 2024 - Danie de Jager - 1.43.0-1
