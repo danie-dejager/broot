@@ -38,7 +38,6 @@ cargo build --release
 %else
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 export PATH="$PATH:$HOME/.cargo/bin"
-rustup default stable-1.86.0
 cargo build --release
 %endif
 
