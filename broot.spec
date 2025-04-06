@@ -1,18 +1,19 @@
 %define name broot
-%define version 1.44.7
+%define version 1.45.1
 %define release 1%{?dist}
 
 Summary:  Fast cd command that learns your habits
 Name:     %{name}
 Version:  %{version}
 Release:  %{release}
-License:  MIT License
+License:  MIT
 URL:      https://github.com/Canop/broot
 Source0:  https://github.com/Canop/broot/archive/refs/tags/v%{version}.tar.gz
 
 %define debug_package %{nil}
 
-BuildRequires: curl
+BuildRequires: rust
+BuildRequires: cargo
 BuildRequires: gcc
 BuildRequires: make
 BuildRequires: gzip
@@ -27,9 +28,6 @@ to navigate to the best match.
 %setup -q
 
 %build
-# Install Rust using curl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-export PATH="$PATH:$HOME/.cargo/bin"
 cargo build --release
 strip --strip-all target/release/%{name}
 upx target/release/%{name}
@@ -44,6 +42,8 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 %{_bindir}/%{name}
 
 %changelog
+* Sun Apr 6 2025 - Danie de Jager - 1.45.1-1
+- Switched to using system Rust toolchain
 * Thu Feb 13 2025 - Danie de Jager - 1.44.7-1
 * Thu Feb 6 2025 - Danie de Jager - 1.44.6-2
 - Rebuilt with rustc 1.84.1
