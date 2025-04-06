@@ -12,8 +12,6 @@ Source0:  https://github.com/Canop/broot/archive/refs/tags/v%{version}.tar.gz
 
 %define debug_package %{nil}
 
-BuildRequires: rust
-BuildRequires: cargo
 BuildRequires: gcc
 BuildRequires: make
 BuildRequires: gzip
