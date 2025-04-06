@@ -19,6 +19,13 @@ BuildRequires: make
 BuildRequires: gzip
 BuildRequires: upx
 
+%if 0%{?fedora}
+BuildRequires: rust
+BuildRequires: cargo
+%else
+BuildRequires: curl
+%endif
+
 %description
 broot is a blazing fast alternative to cd, inspired by z and z.lua. It keeps
 track of the directories you use most frequently, and uses a ranking algorithm
@@ -28,7 +35,14 @@ to navigate to the best match.
 %setup -q
 
 %build
+%if 0%{?fedora}
 cargo build --release
+%else
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+export PATH="$PATH:$HOME/.cargo/bin"
+cargo build --release
+%endif
+
 strip --strip-all target/release/%{name}
 upx target/release/%{name}
 
