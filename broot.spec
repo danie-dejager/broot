@@ -1,5 +1,5 @@
 %define name broot
-%define version 1.46.0
+%define version 1.46.2
 %define release 1%{?dist}
 
 Summary:  Fast cd command that learns your habits
@@ -55,6 +55,7 @@ install -m 755 target/release/%{name} %{buildroot}%{_bindir}
 %{_bindir}/%{name}
 
 %changelog
+* Wed Apr 23 2025 - Danie de Jager - 1.46.2-1
 * Wed Apr 16 2025 - Danie de Jager - 1.46.0-1
 * Sun Apr 6 2025 - Danie de Jager - 1.45.1-1
 - Switched to using system Rust toolchain for al2023.
