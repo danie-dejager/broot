@@ -1,6 +1,8 @@
-### next
+### v1.49.0 - 2025-09-13
+<a name="v1.49.0"></a>
 - `:toggle_watch` internal, with `:watch` shortcut, bound by default to `alt-w`. When watching is active, the tree is refreshed whenever any directory/file, even deep, is changed - Fix #730
 - fallback to a transparent background for images in image preview instead of a specific color - Fix #1040 - Thanks @letmeiiiin
+- fix --server socket written at a non writable location on Android/termux - Fix #1045
 
 ### v1.48.0 - 2025-08-29
 <a name="v1.48.0"></a>
