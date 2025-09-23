@@ -34,7 +34,7 @@ pub trait PanelState {
     );
     fn get_mode(&self) -> Mode;
 
-    /// called on start of on_command
+    /// called on start of on_command, remove the pending task
     fn clear_pending(&mut self) {}
 
     fn on_click(
@@ -182,7 +182,6 @@ pub trait PanelState {
                 );
                 CmdResult::ChangeLayout(LayoutInstruction::SetPanelWidth { panel, width })
             }
-            #[cfg(feature = "trash")]
             #[cfg(any(
                 target_os = "windows",
                 all(
@@ -194,13 +193,12 @@ pub trait PanelState {
             ))]
             Internal::purge_trash => {
                 let res =
-                    trash::os_limited::list().and_then(|items| trash::os_limited::purge_all(items));
+                    trash::os_limited::list().and_then(trash::os_limited::purge_all);
                 match res {
                     Ok(()) => CmdResult::RefreshState { clear_cache: false },
                     Err(e) => CmdResult::DisplayError(format!("{e}")),
                 }
             }
-            #[cfg(feature = "trash")]
             #[cfg(any(
                 target_os = "windows",
                 all(
