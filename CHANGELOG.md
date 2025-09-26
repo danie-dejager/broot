@@ -1,8 +1,11 @@
-### next
+### v1.50.0 - 2025-09-25
+<a name="v1.50.0"></a>
 - big text files now only partially loaded for initial display, remaining being done in background - Fix #1052
 - better support of kitty image protocol over tmux, ssh or unknown terminals, with  `kitty_graphics_display` option and `$TMUX_NEST_COUNT` env variable - see PR #1034 - Thanks @stevenxxiu
 - "trash" compilation feature removed: trash related features are built depending on the platform
 - build chain revised. Future official releases should include a Mac binary
+- fix crash on double unstage of last entry in stage panel - fix #1057
+- fallback to transparent background for text preview when the skin specifies nothing - Thanks @letmeiiiin
 
 ### v1.49.1 - 2025-09-15
 <a name="v1.49.1"></a>
