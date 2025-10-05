@@ -155,6 +155,9 @@ pub struct AppContext {
 
     /// layout modifiers, like divider moves
     pub layout_instructions: LayoutInstructions,
+
+    /// server name
+    pub server_name: Option<String>,
 }
 
 impl AppContext {
@@ -229,6 +232,8 @@ impl AppContext {
         let kept_kitty_temp_files = config
             .kept_kitty_temp_files
             .unwrap_or(std::num::NonZeroUsize::new(500).unwrap());
+        let server_name = build_server_name(&launch_args)
+            .or_else(|| build_server_name(config_default_args.as_ref()?));
 
         Ok(Self {
             is_tty,
@@ -266,6 +271,7 @@ impl AppContext {
             lines_before_match_in_preview: config.lines_before_match_in_preview.unwrap_or(0),
             preview_transformers,
             layout_instructions,
+            server_name,
         })
     }
     /// Return the --cmd argument, coming from the launch arguments (preferred)
@@ -365,4 +371,19 @@ fn canonicalize_root(root: &Path) -> io::Result<PathBuf> {
     } else {
         root.to_path_buf()
     })
+}
+
+/// Build a server name according to the launch arguments
+/// (none if there's neither 'listen' nor 'listen_auto' arg)
+#[allow(unused_variables)]
+fn build_server_name(args: &Args) -> Option<String> {
+    #[cfg(unix)]
+    if let Some(name) = &args.listen {
+        return Some(name.clone());
+    }
+    #[cfg(unix)]
+    if args.listen_auto {
+        return Some(crate::net::random_server_name());
+    }
+    None
 }

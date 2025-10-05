@@ -1,3 +1,10 @@
+### v1.51.0 - 2025-10-05
+<a name="v1.51.0"></a>
+- improved image rendering (both speed by using the zune-image library, and quality with bilinear interpolation)
+- fix compilation broken by 1.50.0 on Android- thanks @dead10ck
+- `--listen-auto` listens for commands on a random linux socket - Fix #1064
+- when auto-completing, `back-tab` cycles in reverse order - Fix #1071
+
 ### v1.50.0 - 2025-09-25
 <a name="v1.50.0"></a>
 - big text files now only partially loaded for initial display, remaining being done in background - Fix #1052
