@@ -1,3 +1,10 @@
+### v1.52.0 - 2025-11-01
+<a name="v1.52.0"></a>
+- `auto_open_staging_area` preference - Fix #1090
+- search content of file target of symlink - Fix #1081
+- fix nushell script (swapped logic for --listen and --listen-auto) - Thanks @cderwin
+- return non-zero exit code on error - Thanks @Sambhram1
+
 ### v1.51.0 - 2025-10-05
 <a name="v1.51.0"></a>
 - improved image rendering (both speed by using the zune-image library, and quality with bilinear interpolation)
