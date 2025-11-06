@@ -89,9 +89,8 @@ impl TreeLineBuilder {
         let line_type = TreeLineType::new(&path, metadata.file_type());
         let name = path
             .file_name()
-            .and_then(|os_str| os_str.to_str())
-            .unwrap_or("")
-            .replace('\n', "");
+            .map(|os_str| os_str.to_string_lossy().replace('\n', "␤"))
+            .unwrap_or_else(String::new);
         let icon = con.icons.as_ref().map(|icon_plugin| {
             let extension = TreeLine::extension_from_name(&name);
             let double_extension =
@@ -183,17 +182,25 @@ impl TreeLine {
     pub fn mode(&self) -> Mode {
         Mode::from(self.metadata.mode())
     }
+    /// Return the unix device id
+    ///
+    /// (the equivalent for windows isn't unfailliblely implementable today)
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     pub fn device_id(&self) -> lfs_core::DeviceId {
         self.metadata.dev().into()
     }
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    pub fn device_id(&self) -> Option<lfs_core::DeviceId> {
+        lfs_core::DeviceId::of_path(&self.path).ok()
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     pub fn mount(&self) -> Option<lfs_core::Mount> {
         use crate::filesystems::*;
         let mut mount_list = MOUNTS.lock().unwrap();
         if mount_list.load().is_ok() {
+            let device_id = lfs_core::DeviceId::of_path(&self.path).ok()?;
             mount_list
-                .get_by_device_id(self.metadata.dev().into())
+                .get_by_device_id(device_id)
                 .cloned()
         } else {
             None
