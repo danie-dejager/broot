@@ -222,9 +222,9 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bet"
-version = "1.0.4"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a33cd5a98377df6ecfedff9c018c1c1ea92c730c4baf9173cfe0d7c3df20ab6"
+checksum = "a36860e45f881828e54f9e6438516185c64fe63da4a2c26fbf60f326f40c9005"
 
 [[package]]
 name = "bincode"
@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "broot"
-version = "1.52.0"
+version = "1.53.0"
 dependencies = [
  "ansi_colours",
  "base64 0.22.1",
@@ -1749,9 +1749,9 @@ checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
 
 [[package]]
 name = "lfs-core"
-version = "0.16.2"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ba81cb1760f319b2322e4e580328a9fd1808860a848ddb770eb779f2c5f02eb"
+checksum = "c0745105cde4e8b166b96a9e6db9de41c8694540fb787018607297b9d9ff6fd0"
 dependencies = [
  "core-foundation",
  "core-foundation-sys",
