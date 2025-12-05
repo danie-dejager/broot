@@ -11,6 +11,7 @@ URL:      https://github.com/Canop/broot
 Source0:  https://github.com/Canop/broot/archive/refs/tags/v%{version}.tar.gz
 
 %define debug_package %{nil}
+%undefine _package_note_file
 
 BuildRequires: gcc
 BuildRequires: make
