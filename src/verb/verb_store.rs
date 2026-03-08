@@ -262,6 +262,8 @@ impl VerbStore {
         self.add_internal(page_up)
             .with_key(key!(ctrl - u))
             .with_key(key!(pageup));
+        self.add_internal(focus_panel_left);
+        self.add_internal(focus_panel_right);
         self.add_internal(panel_left_no_open)
             .with_key(key!(ctrl - left));
         self.add_internal(panel_right).with_key(key!(ctrl - right));
@@ -530,6 +532,7 @@ impl VerbStore {
         if !vc.panels.is_empty() {
             verb.panels.clone_from(&vc.panels);
         }
+        verb.impacted_panel = vc.impacted_panel;
         verb.selection_condition = vc.apply_to;
         Ok(())
     }
