@@ -211,6 +211,14 @@ impl<'b> ExecutionBuilder<'b> {
                     .unwrap_or(sel.path);
                 Some(self.path_to_string(path))
             }
+            "file-root-relative" => {
+                // file path relative to the tree root
+                sel?
+                    .path
+                    .strip_prefix(self.root)
+                    .ok()
+                    .map(|p| self.path_to_string(p))
+            }
             #[cfg(unix)]
             "server-name" => con.server_name.clone(),
             _ => None,
