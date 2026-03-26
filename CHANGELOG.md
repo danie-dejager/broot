@@ -1,4 +1,6 @@
-### next
+### v1.56.2 - 2026-03-26
+<a name="v1.56.2"></a>
+- `{file-root-relative}` argument - Fix #1142
 - fix `:clear_stage` (or other operations closing the stage panel) often closing broot - Fix #1143
 
 ### v1.56.1 - 2026-03-20
