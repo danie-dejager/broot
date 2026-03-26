@@ -1,3 +1,6 @@
+### next
+- fix `:clear_stage` (or other operations closing the stage panel) often closing broot - Fix #1143
+
 ### v1.56.1 - 2026-03-20
 <a name="v1.56.1"></a>
 - fix a typo in a verb in default conf
