@@ -1,3 +1,7 @@
+### next
+- fix control characters sometimes remaining in the terminal after broot exit
+- nushell: rename br module to avoid conflict in last nushell version - Fix #1138 - Thanks @paulhey
+
 ### v1.56.2 - 2026-03-26
 <a name="v1.56.2"></a>
 - `{file-root-relative}` argument - Fix #1142
