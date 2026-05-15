@@ -1,6 +1,12 @@
-### next
+### v1.56.4 - 2026-05-14
+<a name="v1.56.4"></a>
+- fix compilation on non unix platforms (1.56.3 isn't available on those systems)
+
+### v1.56.3 - 2026-05-13
+<a name="v1.56.3"></a>
 - fix control characters sometimes remaining in the terminal after broot exit
 - nushell: rename br module to avoid conflict in last nushell version - Fix #1138 - Thanks @paulhey
+- `:open_stay` on the staging area opens every staged file through the system opener - Fix #444 - Thanks @ChrisJr404
 
 ### v1.56.2 - 2026-03-26
 <a name="v1.56.2"></a>
