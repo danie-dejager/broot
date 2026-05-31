@@ -34,23 +34,15 @@ fn print_string(
         CmdResult::from(Launchable::printer(string)),
     )
 }
-
 pub fn print_paths(
     sel_info: SelInfo,
     con: &AppContext,
 ) -> io::Result<CmdResult> {
-    let string = match sel_info {
-        SelInfo::None => "".to_string(), // better idea ?
-        SelInfo::One(sel) => sel.path.to_string_lossy().to_string(),
-        SelInfo::More(stage) => {
-            let mut string = String::new();
-            for path in stage.paths() {
-                string.push_str(&path.to_string_lossy());
-                string.push('\n');
-            }
-            string
-        }
-    };
+    let mut string = String::new();
+    for path in sel_info.paths() {
+        string.push_str(&path.to_string_lossy());
+        string.push('\n');
+    }
     print_string(string, con)
 }
 
@@ -70,23 +62,15 @@ fn relativize_path(
         ".".to_string()
     })
 }
-
 pub fn print_relative_paths(
     sel_info: SelInfo,
     con: &AppContext,
 ) -> io::Result<CmdResult> {
-    let string = match sel_info {
-        SelInfo::None => "".to_string(),
-        SelInfo::One(sel) => relativize_path(sel.path, con)?,
-        SelInfo::More(stage) => {
-            let mut string = String::new();
-            for path in stage.paths() {
-                string.push_str(&relativize_path(path, con)?);
-                string.push('\n');
-            }
-            string
-        }
-    };
+    let mut string = String::new();
+    for path in sel_info.paths() {
+        string.push_str(&relativize_path(path, con)?);
+        string.push('\n');
+    }
     print_string(string, con)
 }
 
