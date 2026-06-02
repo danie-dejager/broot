@@ -135,6 +135,16 @@ verbs: [
     #     from_shell: true
     # }
 
+    # Piping (`|`) , redirecting (`>`), are also shell features and
+    # need the `from_shell: true` parameter.
+    # This example pipes the selected file to a running Kakoune session:
+    # {
+    #     invocation: "to_kak {session}"
+    #     external: "echo edit {file} | kak -p {session}"
+    #     from_shell: true
+    #     leave_broot: false
+    # }
+
     # Here's an example of a shortcut bringing you to your home directory
     # {
     #     invocation: home
