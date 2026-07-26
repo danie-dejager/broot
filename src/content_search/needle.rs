@@ -65,12 +65,16 @@ impl Needle {
 
     /// look for matches of the needle when it's length is 2
     ///
-    /// Calling this function with a hay of less than 2 bytes may result in undefined behavior.
+    /// Returns `None` when the haystack is shorter than the needle, so the
+    /// subtraction below can't underflow.
     fn find_naive_2(
         &self,
         mut pos: usize,
         hay: &Mmap,
     ) -> Option<usize> {
+        if hay.len() < 2 {
+            return None;
+        }
         let max_pos = hay.len() - 2;
         let b0 = self.bytes[0];
         let b1 = self.bytes[1];
@@ -86,13 +90,14 @@ impl Needle {
     }
 
     /// look for matches of the needle when it's length is 3
-    ///
-    /// Calling this function with a hay of less than 3 bytes may result in undefined behavior.
     fn find_naive_3(
         &self,
         mut pos: usize,
         hay: &Mmap,
     ) -> Option<usize> {
+        if hay.len() < 3 {
+            return None;
+        }
         let max_pos = hay.len() - 3;
         let b0 = self.bytes[0];
         let b1 = self.bytes[1];
@@ -112,13 +117,14 @@ impl Needle {
     }
 
     /// look for matches of the needle when it's length is 4
-    ///
-    /// Calling this function with a hay of less than 4 bytes may result in undefined behavior.
     fn find_naive_4(
         &self,
         mut pos: usize,
         hay: &Mmap,
     ) -> Option<usize> {
+        if hay.len() < 4 {
+            return None;
+        }
         let max_pos = hay.len() - 4;
         let needle = u32::from_ne_bytes((&*self.bytes).try_into().unwrap());
         while pos <= max_pos {
@@ -131,13 +137,14 @@ impl Needle {
     }
 
     /// look for matches of the needle when it's length is 6
-    ///
-    /// Calling this function with a hay of less than 6 bytes may result in undefined behavior.
     fn find_naive_6(
         &self,
         mut pos: usize,
         hay: &Mmap,
     ) -> Option<usize> {
+        if hay.len() < 6 {
+            return None;
+        }
         let max_pos = hay.len() - 6;
         let b0 = self.bytes[0];
         let b1 = self.bytes[1];
@@ -183,6 +190,9 @@ impl Needle {
         mut pos: usize,
         hay: &Mmap,
     ) -> Option<usize> {
+        if hay.len() < self.bytes.len() {
+            return None;
+        }
         let max_pos = hay.len() - self.bytes.len();
         while pos <= max_pos {
             if self.is_at_pos(hay, pos) {
@@ -253,8 +263,7 @@ impl Needle {
         })
     }
 
-    /// this is supposed to be called only when it's known that there's
-    /// a match
+    /// Return a match, assuming there's one (find should have been called first)
     pub fn get_match<P: AsRef<Path>>(
         &self,
         hay_path: P,
@@ -281,6 +290,25 @@ mod content_search_tests {
         let needle = Needle::new("inception", 1_000_000);
         let res = needle.search("src/content_search/needle.rs")?;
         assert!(res.is_found());
+        Ok(())
+    }
+
+    /// Searching a file shorter than the needle must return `NotFound` cleanly
+    /// rather than underflowing `hay.len() - needle.len()` in the `find_naive_*`
+    /// helpers. This prevents possible panics if the functions were to be called directly.
+    #[test]
+    fn test_search_hay_shorter_than_needle_is_not_found() -> Result<(), io::Error> {
+        use std::io::Write;
+        // A 1-byte haystack searched with a 2-byte needle exercises
+        // find_naive_2's length guard; the other helpers are covered by the
+        // shared `hay.len() < self.bytes.len()` guard in search_mmap and the
+        // per-helper guards added for #997.
+        let mut tmp = tempfile::NamedTempFile::new()?;
+        tmp.write_all(b"x")?;
+        tmp.flush()?;
+        let needle = Needle::new("ab", 1_000_000);
+        let res = needle.search(tmp.path())?;
+        assert!(!res.is_found());
         Ok(())
     }
 }
