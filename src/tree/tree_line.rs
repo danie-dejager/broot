@@ -31,6 +31,30 @@ use is_executable::IsExecutable;
 
 pub type TreeLineId = usize;
 
+/// Sanitize a path-derived string (a file/directory name or a symlink
+/// target) before it's written to the terminal: newlines become the
+/// `␤` placeholder and any other control character (including the ESC
+/// byte of a terminal escape sequence) becomes the replacement
+/// character.
+///
+/// Such strings are controlled by whoever created the file, so without
+/// this a name or link target containing an escape sequence would be
+/// interpreted by the terminal of anyone browsing the directory.
+pub fn sanitize_display_name(s: impl Into<String>) -> String {
+    let s = s.into();
+    if s.chars().any(char::is_control) {
+        s.chars()
+            .map(|c| match c {
+                '\n' => '␤',
+                c if c.is_control() => '\u{FFFD}',
+                c => c,
+            })
+            .collect()
+    } else {
+        s
+    }
+}
+
 /// a line in the representation of the file hierarchy
 #[derive(Debug, Clone)]
 pub struct TreeLine {
@@ -89,7 +113,7 @@ impl TreeLineBuilder {
         let line_type = TreeLineType::new(&path, metadata.file_type());
         let name = path
             .file_name()
-            .map(|os_str| os_str.to_string_lossy().replace('\n', "␤"))
+            .map(|os_str| sanitize_display_name(os_str.to_string_lossy()))
             .unwrap_or_else(String::new);
         let icon = con.icons.as_ref().map(|icon_plugin| {
             let extension = TreeLine::extension_from_name(&name);
@@ -223,9 +247,34 @@ impl TreeLine {
     }
     pub fn unprune(&mut self) {
         self.line_type = TreeLineType::new(&self.path, self.metadata.file_type());
-        self.name = self
-            .path
-            .file_name()
-            .map_or_else(|| "???".to_string(), |n| n.to_string_lossy().to_string());
+        self.name = self.path.file_name().map_or_else(
+            || "???".to_string(),
+            |n| sanitize_display_name(n.to_string_lossy()),
+        );
+    }
+}
+
+#[cfg(test)]
+mod sanitize_display_name_tests {
+    use super::*;
+
+    #[test]
+    fn strips_escape_sequences() {
+        // A crafted file name embedding a raw OSC 52 (clipboard-write)
+        // escape sequence, the same shape a malicious local file could
+        // use to inject terminal control sequences into another user's
+        // broot session. The ESC and BEL bytes must not survive
+        // sanitization.
+        let malicious = "\x1b]52;c;cGF5bG9hZA==\x07innocuous_file.txt";
+        let sanitized = sanitize_display_name(malicious);
+        assert!(!sanitized.contains('\u{1b}'));
+        assert!(!sanitized.contains('\u{7}'));
+        assert!(sanitized.contains("innocuous_file.txt"));
+    }
+
+    #[test]
+    fn preserves_normal_names() {
+        let normal = "some-normal_file.name (1).txt";
+        assert_eq!(sanitize_display_name(normal), normal);
     }
 }
