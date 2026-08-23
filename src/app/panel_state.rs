@@ -37,6 +37,12 @@ pub trait PanelState {
     /// called on start of `on_command`, remove the pending task
     fn clear_pending(&mut self) {}
 
+    /// Whether this panel currently displays an image preview. Used to trigger
+    /// terminal-graphics detection lazily, only when an image is actually shown.
+    fn is_previewing_image(&self) -> bool {
+        false
+    }
+
     fn on_click(
         &mut self,
         _x: u16,
@@ -828,7 +834,10 @@ pub trait PanelState {
                 cc,
             ),
             VerbExecution::External(external) => {
-                self.execute_external(w, verb, external, invocation, app_state, cc)
+                self.execute_external(w, verb, external, false, invocation, app_state, cc)
+            }
+            VerbExecution::ShellCommand(external) => {
+                self.execute_external(w, verb, external, true, invocation, app_state, cc)
             }
             VerbExecution::Sequence(seq_ex) => {
                 self.execute_sequence(w, verb, seq_ex, invocation, app_state, cc)
@@ -851,11 +860,13 @@ pub trait PanelState {
         res
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn execute_external(
         &mut self,
         w: &mut W,
         verb: &Verb,
         external_execution: &ExternalExecution,
+        through_shell: bool,
         invocation: Option<&VerbInvocation>,
         app_state: &mut AppState,
         cc: &CmdContext,
@@ -878,7 +889,7 @@ pub trait PanelState {
                 None
             },
         );
-        external_execution.to_cmd_result(w, exec_builder, cc.app.con)
+        external_execution.to_cmd_result(w, exec_builder, through_shell, cc.app.con)
     }
 
     fn execute_sequence(
@@ -1193,7 +1204,9 @@ pub trait PanelState {
         app_state: &AppState,
     ) -> Status {
         if sel_info.count_paths() > 1 {
-            if let VerbExecution::External(external) = &verb.execution {
+            if let VerbExecution::External(external) | VerbExecution::ShellCommand(external) =
+                &verb.execution
+            {
                 if external.exec_mode != ExternalExecutionMode::StayInBroot {
                     let coarity = external.exec_pattern.coarity();
                     info!("coarity of the command is {coarity:?}");

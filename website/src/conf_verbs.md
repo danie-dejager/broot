@@ -36,7 +36,7 @@ auto_exec | `true` | whether to execute the verb as soon as it's key-triggered (
 cmd | | a semicolon sequence to execute, similar to an argument you pass to `--cmd`
 extensions | | optional array of allowed file extensions
 external | | execution, when your verb is based on an external command
-from_shell | `false` | whether the verb must be executed from the parent shell (needs `br`). As this is executed after broot closed, this isn't compatible with `leave_broot = false`
+run_in_parent_shell | `false` | whether the verb must be executed from the parent shell (needs `br`). As this is executed after broot closed, this isn't compatible with `leave_broot = false`
 impacted_panel | `active` | panel on which to execute the action, can be `left`, `right`, `preview`
 internal | | execution, when your verb is based on a predefined broot verb
 invocation | | how the verb is called by the user, with placeholders for arguments
@@ -45,14 +45,15 @@ keys | | several keyboard shortcuts triggering execution (if you want to have th
 leave_broot | `true` | whether to quit broot on execution
 panels | *all* | optional list of panel types in which the verb can be called. Default is all panels: `[tree, fs, preview, help, stage]`
 set_working_dir | `false` | whether the working dir of the process must be set to the currently selected directory (it's equivalent to `workding_dir: "{directory}"`)
+shell_command | | execution through a shell (`sh -c` / `cmd /C`), so that operators like `&&`, `;` and pipes work (alternative to `external`)
 shortcut | | an alternate way to call the verb (without the arguments part)
 switch_terminal | `true` | whether to switch from alternate to normal terminal during execution
 working_dir | | the working directory of the external application, for example `"{directory}"` for the closest directory (the working dir isn't set if the directory doesn't exist)
 
-The execution is defined either by `internal`, `external` or `cmd` so a verb must have exactly one of those (for compatibility with older versions broot still accepts `execution` for `internal` or `external` and guesses which one it is).
+The execution is defined either by `internal`, `external`, `shell_command` or `cmd` so a verb must have exactly one of those (for compatibility with older versions broot still accepts `execution` for `internal` or `external` and guesses which one it is).
 
 **Note:**
-The `from_shell` attribute exists because some actions can't possibly be useful from a subshell. For example, `cd` is a shell builtin which must be executed in the parent shell.
+The `run_in_parent_shell` attribute exists because some actions can't possibly be useful from a subshell. For example, `cd` is a shell builtin which must be executed in the parent shell.
 
 ## Verbs not leaving broot
 
@@ -60,34 +61,31 @@ If you set `leave_broot = false`, broot won't quit when executing your command, 
 
 This is useful for commands modifying the tree (like creating or moving files), or when you want to be back to broot after execution.
 
-# Call shell scripts
+# Shell commands and scripts
 
 With an external, you call an executable.
-If you want to run a script, you must call an executable able to run it.
 
-For example, if you have this shell script:
+If you want to run a shell script, or to chain several commands, or if you need shell features, you must use the `shell_command` attribute instead of `external`.
 
-```bash
-#!/bin/bash
-echo "Hello, I got argument $1"
-sleep 5
-```
+This runs the command line through a shell (`sh -c` on unix, `cmd /C` on Windows).
 
-You can call it with this verb definition:
+Example:
 
 ```hjson
 {
-    invocation: hello
-    external: ["sh" "-e" "/path/to/hello.sh" "{file}"]
+    invocation: "mkfile {name}"
+    shell_command: "mkdir -p {directory}/foo && touch {directory}/foo/{name}"
     leave_broot: false
 }
 ```
 ```toml
 [[verbs]]
-invocation = "hello"
-external = ["sh", "-e", "/path/to/hello.sh", "{file}"]
+invocation = "mkfile {name}"
+shell_command = "mkdir -p {directory}/foo && touch {directory}/foo/{name}"
 leave_broot = false
 ```
+
+Placeholders such as `{directory}` and `{file}` are still filled in by broot (and paths with special characters are quoted for the shell) before the line reaches the shell.
 
 # Using quotes
 
@@ -483,6 +481,7 @@ invocation | default key | default shortcut | behavior / details
 :next_dir | - | - | select the next directory
 :next_match | <kbd>tab</kbd> | - | select the next matching file, or matching verb or path in auto-completion
 :next_same_depth | - | - | select the next file at the same depth
+:no_action | - | - | do nothing (can be used to disable a key)
 :no_sort | - | ns | remove all sorts
 :open_leave | <kbd>alt</kbd><kbd>enter</kbd> | - | open the selected file in the default OS opener and leave broot
 :open_preview | - | - | open the preview panel

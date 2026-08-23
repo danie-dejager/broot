@@ -124,7 +124,7 @@ impl Launchable {
             skin: Box::new(style_map),
             ext_colors,
             width: screen.width,
-            height: (tree.lines.len() as u16).min(screen.height - 1),
+            height: tree_print_height(tree.lines.len(), screen.height),
         }
     }
     /// Create a launchable to execute the given program.
@@ -148,6 +148,31 @@ impl Launchable {
                 keyboard_enhanced: con.keyboard_enhanced,
             }),
             None => Err(io::Error::other("Empty launch string")),
+        }
+    }
+
+    /// Create a launchable running the given command line through a shell, so that
+    /// shell features like `&&`, `;`, pipes and redirections work.
+    ///
+    /// The command is passed untouched to `sh -c` (or `cmd /C` on Windows), which is
+    /// why env variables aren't resolved here: the shell handles them.
+    pub fn shell_program(
+        command: String,
+        working_dir: Option<PathBuf>,
+        switch_terminal: bool,
+        con: &AppContext,
+    ) -> Launchable {
+        #[cfg(windows)]
+        let (exe, flag) = ("cmd".to_string(), "/C".to_string());
+        #[cfg(not(windows))]
+        let (exe, flag) = ("sh".to_string(), "-c".to_string());
+        Launchable::Program {
+            exe,
+            args: vec![flag, command],
+            working_dir,
+            switch_terminal,
+            capture_mouse: con.capture_mouse,
+            keyboard_enhanced: con.keyboard_enhanced,
         }
     }
 
@@ -185,7 +210,7 @@ impl Launchable {
                     // we restore the normal terminal in case the executable
                     // is a terminal application, and we'll switch back to
                     // broot's alternate terminal when we're back to broot
-                    if let Some(ref mut w) = &mut w {
+                    if let Some(w) = &mut w {
                         if *keyboard_enhanced {
                             crokey::pop_keyboard_enhancement_flags()?;
                         }
@@ -215,7 +240,7 @@ impl Launchable {
                         source,
                     });
                 if *switch_terminal {
-                    if let Some(ref mut w) = &mut w {
+                    if let Some(w) = &mut w {
                         terminal::enable_raw_mode()?;
                         if *capture_mouse {
                             w.queue(EnableMouseCapture)?;
@@ -244,6 +269,13 @@ impl Launchable {
     }
 }
 
+fn tree_print_height(
+    tree_height: usize,
+    screen_height: u16,
+) -> u16 {
+    tree_height.min(screen_height.saturating_sub(1) as usize) as u16
+}
+
 /// Try set the current dir to the given path, and if it fails, try to climb the path until an
 /// existing folder is found. Return true if the current dir has been changed, false otherwise.
 pub fn try_set_current_dir(mut dir: &Path) -> bool {
@@ -256,5 +288,19 @@ pub fn try_set_current_dir(mut dir: &Path) -> bool {
             return false;
         };
         dir = parent_dir;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn printed_tree_height_leaves_the_last_screen_row_free() {
+        for (tree_height, screen_height, expected) in
+            [(20, 0, 0), (20, 1, 0), (20, 2, 1), (20, 10, 9), (5, 10, 5)]
+        {
+            assert_eq!(tree_print_height(tree_height, screen_height), expected);
+        }
     }
 }
