@@ -5,6 +5,7 @@ use {
         command::ScrollCommand,
         display::*,
         errors::ProgramError,
+        git::LineGitStatus,
         hex::HexView,
         image::ImageView,
         pattern::InputPattern,
@@ -35,6 +36,7 @@ pub enum Preview {
     Text(TextView),
     Hex(HexView),
     Tty(TtyView),
+    Diff(UnifiedDiffView),
     ZeroLen(ZeroLenFileView),
     IoError(io::Error),
 }
@@ -44,6 +46,7 @@ impl Preview {
     /// If the preferred mode can't be applied, an other mode is chosen.
     pub fn new(
         path: &Path,
+        git_status: Option<LineGitStatus>,
         preferred_mode: Option<PreviewMode>,
         con: &AppContext,
     ) -> Self {
@@ -53,11 +56,17 @@ impl Preview {
                 Some(PreviewMode::Image) => Self::image(path),
                 Some(PreviewMode::Text) => Self::unfiltered_text(path, con),
                 Some(PreviewMode::Tty) => Self::tty(path),
+                Some(PreviewMode::Diff) => Self::diff(path, con),
                 None => {
-                    // automatic behavior: image, text, hex
-                    ImageView::new(path)
-                        .map(Self::Image)
-                        .unwrap_or_else(|_| Self::unfiltered_text(path, con))
+                    // automatic behavior: diff when the file has git changes,
+                    // then image, text, hex
+                    if git_status.is_some_and(LineGitStatus::has_diff) {
+                        Self::diff(path, con)
+                    } else {
+                        ImageView::new(path)
+                            .map(Self::Image)
+                            .unwrap_or_else(|_| Self::unfiltered_text(path, con))
+                    }
                 }
             }
         } else {
@@ -73,6 +82,7 @@ impl Preview {
     ) -> Result<Self, ProgramError> {
         if path.is_file() {
             match mode {
+                PreviewMode::Diff => UnifiedDiffView::new(path, con).map(Self::Diff),
                 PreviewMode::Hex => Ok(HexView::new(path.to_path_buf()).map(Self::Hex)?),
                 PreviewMode::Image => ImageView::new(path).map(Self::Image),
                 PreviewMode::Tty => TtyView::new(path)
@@ -119,6 +129,21 @@ impl Preview {
             .ok()
             .map(Self::Image)
             .unwrap_or_else(|| Self::hex(path))
+    }
+
+    /// build a view of the changes of the file since the last commit,
+    /// or a text preview when the diff can't be computed
+    pub fn diff(
+        path: &Path,
+        con: &AppContext,
+    ) -> Self {
+        match UnifiedDiffView::new(path, con) {
+            Ok(view) => Self::Diff(view),
+            Err(e) => {
+                warn!("can't diff {path:?}: {e}");
+                Self::unfiltered_text(path, con)
+            }
+        }
     }
 
     /// build an tty view, unless there's an IO error
@@ -243,6 +268,7 @@ impl Preview {
             Self::ZeroLen(_) => Some(PreviewMode::Text),
             Self::Hex(_) => Some(PreviewMode::Hex),
             Self::Tty(_) => Some(PreviewMode::Tty),
+            Self::Diff(_) => Some(PreviewMode::Diff),
             Self::IoError(_) => None,
             Self::Dir(_) => None,
         }
@@ -263,6 +289,7 @@ impl Preview {
             Self::Text(sv) => sv.try_scroll(cmd),
             Self::Hex(hv) => hv.try_scroll(cmd),
             Self::Tty(v) => v.try_scroll(cmd),
+            Self::Diff(v) => v.try_scroll(cmd),
             _ => false,
         }
     }
@@ -273,12 +300,14 @@ impl Preview {
     pub fn get_selected_line(&self) -> Option<String> {
         match self {
             Self::Text(sv) => sv.get_selected_line(),
+            Self::Diff(v) => v.get_selected_line(),
             _ => None,
         }
     }
     pub fn get_selected_line_number(&self) -> Option<LineNumber> {
         match self {
             Self::Text(sv) => sv.get_selected_line_number(),
+            Self::Diff(v) => v.get_selected_line_number(),
             _ => None,
         }
     }
@@ -288,14 +317,8 @@ impl Preview {
     ) -> bool {
         match self {
             Self::Text(sv) => sv.try_select_line_number(number),
+            Self::Diff(v) => v.try_select_line_number(number),
             _ => false,
-        }
-    }
-    pub fn unselect(&mut self) {
-        match self {
-            Self::Text(sv) => sv.unselect(),
-            Self::Tty(tv) => tv.unselect(),
-            _ => {}
         }
     }
     pub fn try_select_y(
@@ -305,7 +328,7 @@ impl Preview {
         match self {
             Self::Dir(dv) => dv.try_select_y(y),
             Self::Text(sv) => sv.try_select_y(y),
-            Self::Tty(v) => v.try_select_y(y),
+            Self::Diff(v) => v.try_select_y(y),
             _ => false,
         }
     }
@@ -317,7 +340,11 @@ impl Preview {
         match self {
             Self::Dir(dv) => dv.move_selection(dy, cycle),
             Self::Text(sv) => sv.move_selection(dy, cycle),
-            Self::Tty(v) => v.move_selection(dy, cycle),
+            Self::Diff(v) => v.move_selection(dy, cycle),
+            // views without a selection scroll instead
+            Self::Tty(v) => {
+                v.try_scroll(ScrollCommand::Lines(dy));
+            }
             Self::Hex(hv) => {
                 hv.try_scroll(ScrollCommand::Lines(dy));
             }
@@ -326,17 +353,17 @@ impl Preview {
     }
 
     pub fn previous_match(&mut self) {
-        if let Self::Text(sv) = self {
-            sv.previous_match();
-        } else {
-            self.move_selection(-1, true);
+        match self {
+            Self::Text(sv) => sv.previous_match(),
+            Self::Diff(v) => v.previous_change(),
+            _ => self.move_selection(-1, true),
         }
     }
     pub fn next_match(&mut self) {
-        if let Self::Text(sv) = self {
-            sv.next_match();
-        } else {
-            self.move_selection(1, true);
+        match self {
+            Self::Text(sv) => sv.next_match(),
+            Self::Diff(v) => v.next_change(),
+            _ => self.move_selection(1, true),
         }
     }
 
@@ -344,16 +371,19 @@ impl Preview {
         match self {
             Self::Dir(dv) => dv.select_first(),
             Self::Text(sv) => sv.select_first(),
-            Self::Hex(hv) => hv.select_first(),
-            Self::Tty(v) => v.select_first(),
+            Self::Hex(hv) => hv.go_to_top(),
+            Self::Tty(v) => v.go_to_top(),
+            Self::Diff(v) => v.select_first(),
             _ => {}
         }
     }
     pub fn select_last(&mut self) {
         match self {
+            Self::Dir(dv) => dv.select_last(),
             Self::Text(sv) => sv.select_last(),
-            Self::Hex(hv) => hv.select_last(),
-            Self::Tty(v) => v.select_last(),
+            Self::Hex(hv) => hv.go_to_bottom(),
+            Self::Tty(v) => v.go_to_bottom(),
+            Self::Diff(v) => v.select_last(),
             _ => {}
         }
     }
@@ -369,10 +399,11 @@ impl Preview {
         match self {
             Self::Dir(dv) => dv.display(w, disc, area),
             Self::Image(iv) => time!(iv.display(w, disc, area)),
-            Self::Text(sv) => sv.display(w, screen, panel_skin, area, con),
+            Self::Text(sv) => sv.display(w, screen, panel_skin, area, con, disc.app_state.preview_overflow),
             Self::ZeroLen(zlv) => zlv.display(w, screen, panel_skin, area),
             Self::Hex(hv) => hv.display(w, screen, panel_skin, area),
-            Self::Tty(v) => v.display(w, screen, panel_skin, area),
+            Self::Tty(v) => v.display(w, screen, panel_skin, area, disc.app_state.preview_overflow),
+            Self::Diff(v) => v.display(w, screen, panel_skin, area, con, disc.app_state.preview_overflow),
             Self::IoError(err) => {
                 let mut y = area.top;
                 w.queue(cursor::MoveTo(area.left, y))?;
@@ -407,6 +438,8 @@ impl Preview {
             Self::Image(iv) => iv.display_info(w, screen, panel_skin, area),
             Self::Text(sv) => sv.display_info(w, screen, panel_skin, area),
             Self::Hex(hv) => hv.display_info(w, screen, panel_skin, area),
+            Self::Tty(v) => v.display_info(w, screen, panel_skin, area),
+            Self::Diff(v) => v.display_info(w, screen, panel_skin, area),
             _ => Ok(()),
         }
     }

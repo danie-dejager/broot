@@ -79,6 +79,7 @@ impl App {
             // open initial_file in preview
             let preview_state = Box::new(PreviewState::new(
                 path.clone(),
+                None,
                 InputPattern::none(),
                 None,
                 con.initial_tree_options.clone(),
@@ -315,6 +316,12 @@ impl App {
                             self.panels.clear_input_invocation(con);
                         }
                     }
+                    Internal::toggle_preview_wrap => {
+                        app_state.preview_overflow.toggle();
+                        if is_input_invocation {
+                            self.panels.clear_input_invocation(con);
+                        }
+                    }
                     _ => {
                         let cmd = self.panels.on_input_internal(internal);
                         if cmd.is_none() {
@@ -460,9 +467,17 @@ impl App {
             graphics::prepare_renderer(con)?;
         }
 
-        let combine_keys = conf.enable_kitty_keyboard.unwrap_or(false) && con.is_tty;
+        // unset: keyboard enhancements if supported, multi-key combos need a modifier
+        // true: also modifier-less multi-key combos (eg "a-b")
+        // false: standard keyboard
+        let (combine_keys, mandate_modifier_for_multiple_keys) = match conf.enable_kitty_keyboard {
+            None => (con.is_tty, true),
+            Some(true) => (con.is_tty, false),
+            Some(false) => (false, true),
+        };
         let event_source = EventSource::with_options(EventSourceOptions {
             combine_keys,
+            mandate_modifier_for_multiple_keys,
             ..Default::default()
         })?;
         con.keyboard_enhanced = event_source.supports_multi_key_combinations();
@@ -475,6 +490,7 @@ impl App {
         let mut dam = Dam::from(rx_events);
         let skin = AppSkin::new(conf, con.launch_args.color == TriBool::No);
         let mut app_state = AppState::new(&con.initial_root);
+        app_state.preview_overflow = con.preview_overflow;
         terminal::update_title(w, &app_state, con);
 
         self.panels

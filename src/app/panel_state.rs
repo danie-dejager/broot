@@ -5,6 +5,7 @@ use {
         display::*,
         errors::ProgramError,
         flag::Flag,
+        git::LineGitStatus,
         help::HelpState,
         pattern::*,
         preview::*,
@@ -282,10 +283,12 @@ pub trait PanelState {
                 }
             }
             Internal::open_preview => self.open_preview(None, false, cc),
+            Internal::preview_auto => self.open_preview(None, false, cc),
             Internal::preview_image => self.open_preview(Some(PreviewMode::Image), false, cc),
             Internal::preview_text => self.open_preview(Some(PreviewMode::Text), false, cc),
             Internal::preview_tty => self.open_preview(Some(PreviewMode::Tty), false, cc),
             Internal::preview_binary => self.open_preview(Some(PreviewMode::Hex), false, cc),
+            Internal::preview_diff => self.open_preview(Some(PreviewMode::Diff), false, cc),
             Internal::toggle_preview => self.open_preview(None, true, cc),
             Internal::sort_by_count => self.with_new_options(
                 screen,
@@ -629,6 +632,9 @@ pub trait PanelState {
             }
             Internal::toggle_second_tree => CmdResult::HandleInApp(Internal::toggle_second_tree),
             Internal::toggle_watch => CmdResult::HandleInApp(Internal::toggle_watch),
+            Internal::toggle_preview_wrap => {
+                CmdResult::HandleInApp(Internal::toggle_preview_wrap)
+            }
             Internal::clear_stage => {
                 app_state.stage.clear();
                 if let Some(panel_id) = cc.app.stage_panel {
@@ -712,12 +718,7 @@ pub trait PanelState {
                         let pattern = ExecPattern::from_string(pattern);
                         debug!("write_output executed once per selection");
                         // we execute once per selection (may be zero if the stage is empty)
-                        let sels = stage.paths().iter().map(|path| Selection {
-                            path,
-                            line: 0,
-                            stype: SelectionType::from(path),
-                            is_exe: false,
-                        });
+                        let sels = stage.paths().iter().map(|path| Selection::from_path(path));
                         for sel in sels {
                             content.push_str(&exec_builder.sel_shell_exec_string(&pattern, Some(sel), con));
                         }
@@ -1016,9 +1017,11 @@ pub trait PanelState {
                 CmdResult::Keep
             }
         } else if let Some(path) = self.selected_path() {
+            let git_status = self.selection().and_then(|sel| sel.git_status);
             CmdResult::NewPanel {
                 state: Box::new(PreviewState::new(
                     path.to_path_buf(),
+                    git_status,
                     InputPattern::none(),
                     preferred_mode,
                     self.tree_options(),
@@ -1114,9 +1117,12 @@ pub trait PanelState {
         String::new()
     }
 
-    fn set_selected_path(
+    /// Set the file to preview, with its git status when displayed
+    /// in the source panel
+    fn set_selected(
         &mut self,
         _path: PathBuf,
+        _git_status: Option<LineGitStatus>,
         _con: &AppContext,
     ) {
         // this function is useful for preview states

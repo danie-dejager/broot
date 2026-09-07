@@ -67,7 +67,7 @@ Once the file you want is selected you can
 
 * hit <kbd>enter</kbd> (or double-click) to open it in your system's default program
 * hit <kbd>alt</kbd><kbd>enter</kbd> to open it in your system's default program and close broot
-* hit <kbd>ctrl</kbd><kbd>→</kbd> to preview it (and then a second time to go inside the preview)
+* hit <kbd>ctrl</kbd><kbd>→</kbd> (or <kbd>alt</kbd><kbd>→</kbd> [on macOS](../common-problems/#ctrl-arrows-or-alt-arrows)) to preview it (and then a second time to go inside the preview)
 * type a verb. For example `:e` opens the file in your preferred editor (which may be a terminal one)
 
 [blog: a broot content search workflow](https://dystroy.org/blog/broot-c-search/)
@@ -164,7 +164,9 @@ If you hit `:fs`, you can check the usage of all filesystems, so that you focus 
 
 # Check git statuses:
 
-Use `:gf` to display the statuses of files (what are the new ones, the modified ones, etc.), the current branch name and the change statistics.
+Use `:gf` to display the statuses of files (what are the new ones, the modified ones, etc.), the current branch name, how many commits it is ahead (`↑`) or behind (`↓`) its upstream branch, and the change statistics.
+
+The letter tells the state of the file: `N` untracked, `A` staged (new), `S` staged modification, `M` modified in the working tree, `R` renamed, `C` conflict, `I` ignored.
 
 ![size](img/20230930-git.png)
 

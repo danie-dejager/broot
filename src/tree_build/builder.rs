@@ -23,7 +23,6 @@ use {
         },
         tree::*,
     },
-    git2::Repository,
     id_arena::Arena,
     std::{
         collections::{
@@ -97,10 +96,7 @@ impl<'c> TreeBuilder<'c> {
         let line_status_computer = if options.filter_by_git_status || options.show_git_file_info {
             time!(
                 "init line_status_computer",
-                Repository::discover(&path)
-                    .ok()
-                    .as_ref()
-                    .and_then(LineStatusComputer::from),
+                LineStatusComputer::from_root(&path),
             )
         } else {
             None
@@ -355,7 +351,7 @@ impl<'c> TreeBuilder<'c> {
                     if self
                         .options
                         .max_depth
-                        .map_or(false, |max| child.depth > max)
+                        .is_some_and(|max| child.depth > max)
                     {
                         break;
                     }

@@ -8,7 +8,10 @@ use {
         },
         conf::*,
         content_search,
-        display::LayoutInstructions,
+        display::{
+            LayoutInstructions,
+            Overflow,
+        },
         errors::*,
         file_sum,
         icon::*,
@@ -77,6 +80,9 @@ pub struct AppContext {
 
     /// whether to show a triangle left to selected lines
     pub show_selection_mark: bool,
+
+    /// how to deal with preview lines longer than the panel width
+    pub preview_overflow: Overflow,
 
     /// mapping from file extension to colors (comes from conf)
     pub ext_colors: ExtColorMap,
@@ -157,6 +163,9 @@ pub struct AppContext {
 
     /// Number of lines to display before a match in the preview
     pub lines_before_match_in_preview: usize,
+
+    /// Number of unchanged lines to display around the hunks of a diff
+    pub lines_around_diff_hunks: usize,
 
     /// The set of transformers called before previewing a file
     pub preview_transformers: PreviewTransformers,
@@ -257,6 +266,7 @@ impl AppContext {
             special_paths,
             search_modes,
             show_selection_mark: config.show_selection_mark.unwrap_or(false),
+            preview_overflow: config.wrap_previews.map(Overflow::from_wrap_bool).unwrap_or_default(),
             ext_colors,
             syntax_theme: config.syntax_theme,
             standard_status,
@@ -281,6 +291,7 @@ impl AppContext {
             kept_kitty_temp_files,
             lines_after_match_in_preview: config.lines_after_match_in_preview.unwrap_or(0),
             lines_before_match_in_preview: config.lines_before_match_in_preview.unwrap_or(0),
+            lines_around_diff_hunks: config.lines_around_diff_hunks.unwrap_or(3),
             preview_transformers,
             layout_instructions,
             server_name,

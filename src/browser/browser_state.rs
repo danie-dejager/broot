@@ -300,7 +300,8 @@ impl PanelState for BrowserState {
         screen: Screen,
         con: &AppContext,
     ) -> Result<CmdResult, ProgramError> {
-        if self.displayed_tree().selection == y as usize {
+        let tree = self.displayed_tree();
+        if tree.selection == y as usize + tree.scroll {
             self.open_selection_stay_in_broot(screen, con, false, false)
         } else {
             // A double click always come after a simple click at
@@ -405,8 +406,12 @@ impl PanelState for BrowserState {
                 CmdResult::Keep
             }
             Internal::next_match => {
-                self.displayed_tree_mut()
-                    .try_select_next_filtered(|line| line.direct_match, page_height);
+                let tree = self.displayed_tree_mut();
+                if tree.options.pattern.is_some() {
+                    tree.try_select_next_filtered(|line| line.direct_match, page_height);
+                } else if tree.options.show_git_file_info || tree.options.filter_by_git_status {
+                    tree.try_select_next_filtered(|line| line.git_status.is_some(), page_height);
+                }
                 CmdResult::Keep
             }
             Internal::next_same_depth => {
@@ -482,8 +487,12 @@ impl PanelState for BrowserState {
                 CmdResult::Keep
             }
             Internal::previous_match => {
-                self.displayed_tree_mut()
-                    .try_select_previous_filtered(|line| line.direct_match, page_height);
+                let tree = self.displayed_tree_mut();
+                if tree.options.pattern.is_some() {
+                    tree.try_select_previous_filtered(|line| line.direct_match, page_height);
+                } else if tree.options.show_git_file_info || tree.options.filter_by_git_status {
+                    tree.try_select_previous_filtered(|line| line.git_status.is_some(), page_height);
+                }
                 CmdResult::Keep
             }
             Internal::previous_same_depth => {
@@ -738,6 +747,8 @@ impl PanelState for BrowserState {
         ssb.is_filtered = self.filtered_tree.is_some();
         ssb.has_removed_pattern = false;
         ssb.on_tree_root = tree.selection == 0;
+        ssb.in_git_repo = !tree.options.filter_by_git_status
+            && git::closest_repo_dir(tree.root()).is_some();
         ssb.status()
     }
 

@@ -25,10 +25,16 @@ Some users [reported](https://github.com/Canop/broot/issues/1031) the input bein
 This may be due to the terminal being too slow to answer to ANSI queries.
 In such case, you may simplify importing in your conf.hjson to skip color testing. For example replace the whole `imports` with
 
-```TOML
+```Hjson
 imports: [
         verbs.hjson
         skins/dark-gruvbox.hjson
+]
+```
+```TOML
+imports = [
+    "verbs.hjson",
+    "skins/dark-gruvbox.hjson",
 ]
 ```
 
@@ -38,11 +44,19 @@ The first problem you might see is the presence of artifacts. This may happen in
 
 * [relevant issue](https://github.com/Canop/broot/issues/248)
 
-A workaround is to create a skin (for example by uncommenting the one in `conf.toml`) and to remove all `Italic` and `Bold`.
+A workaround is to copy one of the skins of your configuration directory, remove all `italic` and `bold` attributes, and [import](../conf_file/#imports) it instead of the default one.
 
 Additionally, if backgrounds can't be properly displayed, you may consider [marking selected lines](../conf_file/#selection-mark).
 
 Another problem is the fact the `br` function doesn't set a proper pane name (you'll probably see the name of your shell instead of broot). This may be [solved with a modified shell function](https://github.com/Canop/broot/issues/270).
+
+# Ctrl-arrows or alt-arrows
+
+Moving between panels, opening a preview, or moving the tree root, is done with arrow keys combined with a modifier: <kbd>ctrl</kbd><kbd>→</kbd> or <kbd>alt</kbd><kbd>→</kbd>, both being bound by default to the same internals (`:panel_right`, `:panel_left_no_open`, `:root_up`, `:root_down`).
+
+Both are bound because most setups only let one of them reach broot: terminal multiplexers, multi-pane terminals and desktop environments commonly use <kbd>ctrl</kbd> or <kbd>alt</kbd> + arrows for their own navigation (macOS, for example, captures <kbd>ctrl</kbd> + arrows, which is why broot shows the <kbd>alt</kbd> combinations in its hints and help there).
+
+If none of the two works, [print_key](https://github.com/Canop/print_key) tells you what your terminal lets through, and you can [rebind](../conf_verbs/#keyboard-key) the internals.
 
 # Key combination problem
 
@@ -54,7 +68,7 @@ I've made a small program which tells you what key combinations are available: [
 
 [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/) binds `alt+enter` to the "toggle fullscreen" command by default. To reclaim `alt+enter` for Broot, [add an 'unbound' entry to the actions array in settings.json](https://docs.microsoft.com/en-us/windows/terminal/customize-settings/actions#unbind-keys):
 
-```json
+```
 {"command": "unbound", "keys": "alt+enter"}
 ```
 
@@ -66,6 +80,8 @@ Go to *Preferences->Profiles->Default->Keys* and add a mapping that maps `⌥Ret
 Note that this will change the behavior of `alt+enter` for all terminal windows, and it will no longer send the `return` sequence.
 
 * [relevant issue](https://github.com/Canop/broot/issues/682)
+
+Other `alt` combinations, like <kbd>alt</kbd><kbd>g</kbd>, reach broot through the [Kitty keyboard protocol](../conf_file/#keyboard-enhancements), which broot enables by default in iTerm2. If you disabled it, either enable it again or set *Preferences->Profiles->Default->Keys->Left Option key* to `Esc+` (this prevents typing the characters composed with the option key, a problem on international layouts).
 
 **Ghostty**
 
@@ -106,9 +122,9 @@ It's probably your terminal app's fault. You could check that by using any other
 
 Most terminal apps are fine but some, made with Electron or worse, or crippled with fancy plugins, take dozens of milliseconds to redraw the screen. You should not use those terminals.
 
-# msysgit or git bash
+# Git Bash, MSYS2
 
-I have no solution for that. If you know how to tackle the problem, the maintainers of [Crossterm](https://github.com/crossterm-rs/crossterm) would be interested too.
+Broot doesn't work in mintty, the terminal that Git for Windows and MSYS2 open by default, as it doesn't provide the Windows console API. Run your Git Bash or MSYS2 shell in [Windows Terminal](https://github.com/microsoft/terminal) instead: broot works there, including the `br` function.
 
 # Windows
 
@@ -182,6 +198,6 @@ Outside a multiplexer, Sixel is detected automatically under `graphics_display =
 
 The standard `edit` verb, launched with `:e`, starts your favourite terminal editor to edit the selected file.
 
-It works by executing `"$EDITOR +{line} {file}"` which assumes that the `$EDITOR` variable is defined and that your editor takes the line number as argument.
+It works by executing `"$EDITOR {file}"`, which assumes that the `$EDITOR` variable is defined.
 
-If it doesn't work on your configuration, you should probably just edit this verb definition with a more suitable command, for example `"hx {file}:{line}"` or `"/usr/bin/my-editor --line {line} {file}"`
+To have your editor open the file at the line selected in a preview or found by a content search, add `{line}` to the verb definition in verbs.hjson with the syntax of your editor, for example `"nvim +{line} {file}"` or `"hx {file}:{line}"`.

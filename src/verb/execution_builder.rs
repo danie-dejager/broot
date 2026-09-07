@@ -3,6 +3,7 @@ use {
     crate::{
         app::*,
         command::*,
+        git,
         path::{
             self,
             PathAnchor,
@@ -183,26 +184,21 @@ impl<'b> ExecutionBuilder<'b> {
             "git-root" => {
                 // path to git repo workdir
                 debug!("finding git root");
-                sel.and_then(|s| git2::Repository::discover(s.path).ok())
-                    .and_then(|repo| repo.workdir().map(|p| self.path_to_string(p)))
+                sel.and_then(|s| git::workdir(s.path))
+                    .map(|p| self.path_to_string(&p))
             }
             "git-name" => {
                 // name of the git repo workdir
-                sel.and_then(|s| git2::Repository::discover(s.path).ok())
-                    .and_then(|repo| {
-                        repo.workdir().and_then(|path| {
-                            path.file_name()
-                                .and_then(|oss| oss.to_str())
-                                .map(|s| s.to_string())
-                        })
-                    })
+                sel.and_then(|s| git::workdir(s.path)).and_then(|path| {
+                    path.file_name()
+                        .and_then(|oss| oss.to_str())
+                        .map(|s| s.to_string())
+                })
             }
             "file-git-relative" => {
                 // file path relative to git repo workdir
                 let sel = sel?;
-                let path = git2::Repository::discover(self.root)
-                    .ok()
-                    .and_then(|repo| repo.workdir().map(|p| self.path_to_string(p)))
+                let path = git::workdir(self.root)
                     .and_then(|gitroot| sel.path.strip_prefix(gitroot).ok())
                     .filter(|p| {
                         // it's empty when the file is both the tree root and the git root
@@ -339,7 +335,7 @@ impl<'b> ExecutionBuilder<'b> {
                     }
                     None
                 })
-                .map_or(false, |verb| verb.get_internal().is_none());
+                .is_some_and(|verb| verb.get_internal().is_none());
             let input = if verb_is_external {
                 self.shell_exec_string(&ExecPattern::from_string(input), con)
             } else {
@@ -477,7 +473,7 @@ impl<'b> ExecutionBuilder<'b> {
         }
         // backslashes must be in this set: on Windows the string may go to
         // the launcher's outcmd file, whose eval would remove them
-        if !regex_is_match!(r#"[\s"'\\]"#, &s) {
+        if !regex_is_match!(r#"[\s"'\\`$*?\[\]{}()<>|;&!#]"#, &s) {
             // if there's no special character, we don't need to escape or wrap
             return s.to_string();
         }
@@ -543,12 +539,7 @@ mod execution_builder_test {
         chk_exec_token: Vec<&str>,
     ) {
         let path = PathBuf::from(path);
-        let sel = Selection {
-            path: &path,
-            line: 0,
-            stype: SelectionType::File,
-            is_exe: false,
-        };
+        let sel = Selection::new(&path, SelectionType::File);
         let app_state = AppState::new(PathBuf::from("/".to_owned()));
         let mut builder = ExecutionBuilder::without_invocation(SelInfo::One(sel), &app_state);
         let mut map = FxHashMap::default();
@@ -626,5 +617,9 @@ mod execution_builder_test {
             builder.path_to_string("/home/dys/it's dev"),
             r#"'/home/dys/it'"'"'s dev'"#,
         );
+        assert_eq!(builder.path_to_string("/tmp/a[1]"), "'/tmp/a[1]'");
+        assert_eq!(builder.path_to_string("/tmp/$(x)"), "'/tmp/$(x)'");
+        assert_eq!(builder.path_to_string("/tmp/a*b"), "'/tmp/a*b'");
+        assert_eq!(builder.path_to_string("/tmp/é-ü_1.txt"), "/tmp/é-ü_1.txt");
     }
 }

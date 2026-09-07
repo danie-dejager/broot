@@ -5,7 +5,7 @@ Broot can display two panels. Most frequent uses are:
 
 # Keyboard shortcuts
 
-The <kbd>ctrl</kbd><kbd>←</kbd> and <kbd>ctrl</kbd><kbd>→</kbd> shortcuts should be enough to support all common panel related operation:
+The <kbd>ctrl</kbd><kbd>←</kbd> and <kbd>ctrl</kbd><kbd>→</kbd> shortcuts (<kbd>alt</kbd><kbd>←</kbd> and <kbd>alt</kbd><kbd>→</kbd> [on macOS](../common-problems/#ctrl-arrows-or-alt-arrows)) should be enough to support all common panel related operation:
 
 * When there's only one panel, use <kbd>ctrl</kbd><kbd>←</kbd> to open a panel to the left, and <kbd>ctrl</kbd><kbd>→</kbd> to open one to the right
 * When two panels are open, you may go to the panel left of the current one with <kbd>ctrl</kbd><kbd>←</kbd> and to the panel to the right with <kbd>ctrl</kbd><kbd>→</kbd>
@@ -19,7 +19,7 @@ The type of open panel depends on the selection:
 You may also close the current panel with <kbd>ctrl</kbd><kbd>W</kbd>, which is a shortcut for `:close_panel` (you can [change all bindings](../conf_verbs/#keyboard-key)).
 
 **Note:**
-Depending on your system and terminal, the <kbd>ctrl</kbd><kbd>←</kbd>  and <kbd>ctrl</kbd><kbd>→</kbd> key bindings might not convenient or not usable. In such a case, you should [rebind](../conf_verbs/#keyboard-key) the `:panel_left` and `:panel_right` internals.
+<kbd>alt</kbd><kbd>←</kbd> and <kbd>alt</kbd><kbd>→</kbd> are bound too, because macOS captures the ctrl-arrows combinations by default, see [Ctrl-arrows or alt-arrows](../common-problems/#ctrl-arrows-or-alt-arrows). If your terminal doesn't let any of those key bindings reach broot, you should [rebind](../conf_verbs/#keyboard-key) the `:panel_left_no_open` and `:panel_right` internals.
 
 # Use a verb to open a panel
 
@@ -34,6 +34,8 @@ For example, while `:focus ~` navigates to your home directory in the current pa
 It's not immediately focused on creation, because most often you'll want to preview a few files and it's convenient to stay in the tree to navigate.
 
 To focus it, for example to scroll it or to do a search, do <kbd>ctrl</kbd><kbd>→</kbd> again.
+
+Long lines are wrapped to the panel's width. If you prefer them truncated, use the `:toggle_preview_wrap` verb (shortcut `:wrap`) or set `wrap_previews: false` in [the conf](../conf_file/#wrap).
 
 Files that can't be interpreted as text or image are shown as binary:
 
@@ -134,6 +136,19 @@ You may bind keyboard shortcuts, eg (in the `verbs` array of verbs.hjson)
     leave_broot: false
 }
 ```
+```toml
+[[verbs]]
+invocation = "move_divider_left"
+key = "alt-<"
+execution = ":move_panel_divider 0 -1"
+leave_broot = false
+
+[[verbs]]
+invocation = "move_divider_right"
+key = "alt->"
+execution = ":move_panel_divider 0 1"
+leave_broot = false
+```
 
 Resizing instructions can also be provided in a configuration file, eg
 
@@ -142,11 +157,21 @@ layout_instructions: [
     { panel: 1, width: 80 }
 ]
 ```
+```toml
+layout_instructions = [
+    { panel = 1, width = 80 },
+]
+```
 
 or
 
 ```hjson
 layout_instructions: [
     { divider: 0, dx: 5 }
+]
+```
+```toml
+layout_instructions = [
+    { divider = 0, dx = 5 },
 ]
 ```

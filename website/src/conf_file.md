@@ -59,6 +59,13 @@ imports: [
 
 ]
 ```
+```TOML
+imports = [
+	"verbs.toml",
+	{ luma = "light", file = "white-skin.hjson" },
+	{ luma = ["dark", "unknown"], file = "dark-blue-skin.hjson" },
+]
+```
 
 This example defines 3 imports.
 
@@ -97,6 +104,8 @@ default_flags = "-gh"
 Those flags can still be overridden at launch with the negating ones. For example, with the above `default_flags`, if you don't want to see hidden files on a specific launch, do
 
     br -H
+
+Some flags can be repeated: `-gg` shows only the files with a git status, and `-G` removes one level of git information (so with `default_flags: -gg`, `br -G` shows all files, with their git status).
 
 # Special Paths
 
@@ -273,6 +282,19 @@ terminal_title = "{file} 🐄"
 
 # Preview
 
+## Wrap
+
+Long lines of text, diff, and tty previews are wrapped by default.
+
+You can toggle wrapping at any time with the `:toggle_preview_wrap` verb (shortcut `:wrap`), and change the initial behavior in the conf:
+
+```Hjson
+wrap_previews: false
+```
+```TOML
+wrap_previews = false
+```
+
 ## Graphics Display
 
 `graphics_display` selects which terminal-graphics protocol broot uses for
@@ -351,6 +373,8 @@ It's possible to define transformers to apply to some files before preview.
 
 This makes it possible for example to render a specific kind of files as images, or to beautify some text ones.
 
+The `mode` of a transformer tells how its output is previewed: `image`, `text`, or `tty` when the output contains ANSI color sequences.
+
 Below are examples that you may adapt to your needs and preferred tools.
 They must be included in a `preview_transformers` array, as shown in the [default conf.hjson](https://github.com/Canop/broot/blob/main/resources/default-conf/conf.hjson).
 
@@ -367,6 +391,15 @@ They must be included in a `preview_transformers` array, as shown in the [defaul
 	mode: image
 	command: [ "mutool", "draw", "-w", "1000", "-o", "{output-path}", "{input-path}" ]
 }
+```
+```TOML
+# Use mutool to render any PDF file as an image
+# In this example we use placeholders for the input and output files
+[[preview_transformers]]
+input_extensions = ["pdf"] # case doesn't matter
+output_extension = "png"
+mode = "image"
+command = ["mutool", "draw", "-w", "1000", "-o", "{output-path}", "{input-path}"]
 ```
 
 ### Render Office files using libreoffice:
@@ -386,6 +419,18 @@ They must be included in a `preview_transformers` array, as shown in the [defaul
     ]
 }
 ```
+```TOML
+[[preview_transformers]]
+input_extensions = ["xls", "xlsx", "doc", "docx", "ppt", "pptx", "ods", "odt", "odp"]
+output_extension = "png"
+mode = "image"
+command = [
+    "libreoffice", "--headless",
+    "--convert-to", "png",
+    "--outdir", "{output-dir}",
+    "{input-path}",
+]
+```
 
 ### Beautify JSON using jq
 
@@ -401,6 +446,16 @@ They must be included in a `preview_transformers` array, as shown in the [defaul
 	mode: text
 	command: [ "jq" ]
 }
+```
+```TOML
+# Use jq to beautify JSON
+# In this example, the command refers to neither the input nor the output,
+# so broot pipes them to the stdin and stdout of the jq process
+[[preview_transformers]]
+input_extensions = ["json"]
+output_extension = "json"
+mode = "text"
+command = ["jq"]
 ```
 
 ## Match surroundings
@@ -428,16 +483,12 @@ And you'll get
 
 ## Keyboard enhancements
 
-By default, ANSI terminals make a lot of keyboard combinations impossible, for example <kbd>space</kbd><kbd>n</kbd>, or <kbd>alt</kbd><kbd>a</kbd><kbd>b</kbd>, or <kbd>shift</kbd><kbd>space</kbd>, etc.
-Some terminals implement [Kitty's keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) and basically make it possible to bind verbs to such combinations.
+Standard ANSI terminals make a lot of keyboard combinations impossible, for example <kbd>shift</kbd><kbd>space</kbd>, <kbd>alt</kbd><kbd>a</kbd><kbd>b</kbd>, or <kbd>space</kbd><kbd>n</kbd>.
+Many terminals implement [Kitty's keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) (Kitty, Wezterm, Ghostty, iTerm2, foot, etc.), which makes it possible to bind verbs to such combinations.
 
-Broot tests whether the terminal supports those enhancements, and if it's the case, tries to enable them.
+Broot tests whether the terminal supports this protocol, and if it's the case, enables it. It also makes <kbd>alt</kbd> combinations work on macOS terminals which otherwise let the option key compose characters.
 
-A small downside is that broot will react on key release instead of key press (so that you may press other keys before you release the first one), which may feel less instant. If the Kitty protocol isn't supported by your terminal, broot will react on key press.
-Another problem is that it may push you towards key combinations that you wouldn't be able to reuse when switching terminal.
-And finally, some terminals have buggy implementations (at time of writing).
-
-To enable those keyboard enhancements change this setting to true
+Multi-key combinations without modifier, like <kbd>space</kbd><kbd>n</kbd> or <kbd>a</kbd><kbd>b</kbd>, aren't enabled by default because they need broot to react on key release instead of key press (so that you may press other keys before you release the first one), which feels less instant. To enable them, set this to true:
 
 ```Hjson
 enable_kitty_keyboard: true
@@ -445,6 +496,10 @@ enable_kitty_keyboard: true
 ```TOML
 enable_kitty_keyboard = true
 ```
+
+Set it to false to not use the protocol at all (for example if your terminal has a buggy implementation).
+
+Keep in mind that combinations which are only possible with this protocol won't be available when switching to a terminal without it.
 
 ## Staging area
 

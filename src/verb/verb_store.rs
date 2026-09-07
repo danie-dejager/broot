@@ -42,6 +42,19 @@ pub enum PrefixSearchResult<'v, T> {
     Matches(Vec<&'v str>),
 }
 
+/// Return the keys of an arrow based internal, the first one being
+/// the one shown in hints and help. macOS captures ctrl-arrows.
+fn arrow_keys(
+    ctrl: KeyCombination,
+    alt: KeyCombination,
+) -> Vec<KeyCombination> {
+    if cfg!(target_os = "macos") {
+        vec![alt, ctrl]
+    } else {
+        vec![ctrl, alt]
+    }
+}
+
 impl VerbStore {
     pub fn new(conf: &mut Conf) -> Result<Self, ConfError> {
         let mut store = Self {
@@ -130,10 +143,13 @@ impl VerbStore {
         self.add_internal(open_preview);
         self.add_internal(close_preview);
         self.add_internal(toggle_preview);
+        self.add_internal(toggle_preview_wrap).with_shortcut("wrap");
+        self.add_internal(preview_auto);
         self.add_internal(preview_image).with_shortcut("img");
         self.add_internal(preview_text).with_shortcut("txt");
         self.add_internal(preview_binary).with_shortcut("hex");
         self.add_internal(preview_tty).with_shortcut("tty");
+        self.add_internal(preview_diff);
         self.add_internal(close_panel_ok);
         self.add_internal(close_panel_cancel)
             .with_key(key!(ctrl - w));
@@ -172,7 +188,12 @@ impl VerbStore {
         self.add_internal(trash);
         #[cfg(any(
             target_os = "windows",
-            all(unix, not(any(target_os = "ios", target_os = "android")))
+            all(
+                unix,
+                not(target_os = "macos"),
+                not(target_os = "ios"),
+                not(target_os = "android")
+            )
         ))]
         {
             self.add_internal(open_trash).with_shortcut("ot");
@@ -281,8 +302,9 @@ impl VerbStore {
         self.add_internal(focus_panel_left);
         self.add_internal(focus_panel_right);
         self.add_internal(panel_left_no_open)
-            .with_key(key!(ctrl - left));
-        self.add_internal(panel_right).with_key(key!(ctrl - right));
+            .add_keys(arrow_keys(key!(ctrl - left), key!(alt - left)));
+        self.add_internal(panel_right)
+            .add_keys(arrow_keys(key!(ctrl - right), key!(alt - right)));
         self.add_internal(print_path).with_shortcut("pp");
         self.add_internal(print_relative_path).with_shortcut("prp");
         self.add_internal(print_tree).with_shortcut("pt");
@@ -291,8 +313,10 @@ impl VerbStore {
             .with_key(key!(ctrl - q))
             .with_shortcut("q");
         self.add_internal(refresh).with_key(key!(f5));
-        self.add_internal(root_up).with_key(key!(ctrl - up));
-        self.add_internal(root_down).with_key(key!(ctrl - down));
+        self.add_internal(root_up)
+            .add_keys(arrow_keys(key!(ctrl - up), key!(alt - up)));
+        self.add_internal(root_down)
+            .add_keys(arrow_keys(key!(ctrl - down), key!(alt - down)));
         self.add_internal(select_first);
         self.add_internal(select_last);
         self.add_internal(select);
@@ -330,7 +354,9 @@ impl VerbStore {
             .with_key(key!(alt - i))
             .with_shortcut("gi");
         self.add_internal(toggle_git_file_info).with_shortcut("gf");
-        self.add_internal(toggle_git_status).with_shortcut("gs");
+        self.add_internal(toggle_git_status)
+            .with_key(key!(alt - g))
+            .with_shortcut("gs");
         self.add_internal(toggle_root_fs).with_shortcut("rfs");
         self.add_internal(set_max_depth);
         self.add_internal(unset_max_depth);
@@ -650,6 +676,10 @@ impl VerbStore {
                     if short_circuit && name == prefix {
                         return PrefixSearchResult::Match(name, verb);
                     }
+                    if completions.contains(&name.as_str()) {
+                        // shadowed by an earlier verb with the same name
+                        continue;
+                    }
                     found_index = index;
                     nb_found += 1;
                     completions.push(name);
@@ -706,4 +736,31 @@ impl VerbStore {
 fn check_builtin_verbs() {
     let mut conf = Conf::default();
     let _store = VerbStore::new(&mut conf).unwrap();
+}
+
+/// A verb redefined with the name of an earlier one must not make
+/// a prefix search ambiguous: the first definition wins.
+#[test]
+fn check_shadowed_homonym_verbs() {
+    let mut conf = Conf::default();
+    let first = VerbConf {
+        invocation: Some("edit".to_string()),
+        shortcut: Some("e".to_string()),
+        external: Some(ExecPattern::from_string("first {file}")),
+        ..Default::default()
+    };
+    let second = VerbConf {
+        invocation: Some("edit".to_string()),
+        shortcut: Some("e".to_string()),
+        external: Some(ExecPattern::from_string("second {file}")),
+        ..Default::default()
+    };
+    conf.verbs.push(first);
+    conf.verbs.push(second);
+    let store = VerbStore::new(&mut conf).unwrap();
+    let PrefixSearchResult::Match(name, verb) = store.search_prefix("edi", None) else {
+        panic!("prefix of a shadowed verb name must resolve to a single verb");
+    };
+    assert_eq!(name, "edit");
+    assert_eq!(verb.execution.to_string(), "first {file}");
 }

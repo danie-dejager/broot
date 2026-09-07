@@ -122,6 +122,9 @@ pub struct Conf {
     #[serde(alias = "lines-before-match-in-preview")]
     pub lines_before_match_in_preview: Option<usize>,
 
+    #[serde(alias = "lines-around-diff-hunks")]
+    pub lines_around_diff_hunks: Option<usize>,
+
     pub max_panels_count: Option<usize>,
 
     #[serde(alias = "max_staged_count")]
@@ -163,6 +166,9 @@ pub struct Conf {
 
     #[serde(alias = "update-work-dir")]
     pub update_work_dir: Option<bool>,
+
+    #[serde(alias = "wrap-previews")]
+    pub wrap_previews: Option<bool>,
 
     #[serde(default)]
     pub verbs: Vec<VerbConf>,
@@ -260,6 +266,7 @@ impl Conf {
         overwrite!(self, terminal_title, conf);
         overwrite!(self, reset_terminal_title_on_exit, conf);
         overwrite!(self, update_work_dir, conf);
+        overwrite!(self, wrap_previews, conf);
         overwrite!(self, enable_kitty_keyboard, conf);
         overwrite!(self, kitty_graphics_transmission, conf);
         overwrite!(self, kitty_graphics_display, conf);
@@ -267,6 +274,7 @@ impl Conf {
         overwrite!(self, kept_kitty_temp_files, conf);
         overwrite!(self, lines_after_match_in_preview, conf);
         overwrite!(self, lines_before_match_in_preview, conf);
+        overwrite!(self, lines_around_diff_hunks, conf);
         overwrite!(self, layout_instructions, conf);
         self.verbs.append(&mut conf.verbs);
         // the following prefs are "additive": we can add entries from several

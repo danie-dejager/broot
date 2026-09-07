@@ -165,6 +165,12 @@ Thus you may define both verbs with extension filters and a catch-all verb.
 
 Knowing this algorithm, you may understand the point in the following definition:
 
+```hjson
+{
+    invocation: p
+    internal: ":parent"
+}
+```
 ```toml
 [[verbs]]
 invocation = "p"
@@ -491,11 +497,13 @@ invocation | default key | default shortcut | behavior / details
 :page_down | <kbd>⇟</kbd> | - | scroll one page down
 :page_up | <kbd>⇞</kbd> | - | scroll one page up
 :panel_left | -  | - | move to or open a panel to the left
-:panel_left_no_open | <kbd>ctrl</kbd><kbd>←</kbd>  | - | move to panel to the left
-:panel_right | <kbd>ctrl</kbd><kbd>→</kbd>  | - | move to or open a panel to the right
+:panel_left_no_open | <kbd>ctrl</kbd><kbd>←</kbd> or <kbd>alt</kbd><kbd>←</kbd> | - | move to panel to the left
+:panel_right | <kbd>ctrl</kbd><kbd>→</kbd> or <kbd>alt</kbd><kbd>→</kbd> | - | move to or open a panel to the right
 :panel_right_no_open | -  | - | move to panel to the right
 :parent | - | - | focus the parent directory
+:preview_auto | - | - | preview the selection in the default mode
 :preview_binary | - | - | preview the selection as binary
+:preview_diff | - | - | preview the changes of the selection since the last commit
 :preview_image | - | - | preview the selection as image
 :preview_text | - | - | preview the selection as text
 :preview_tty | - | - | preview the selection as tty (with ANSI escape codes)
@@ -507,8 +515,8 @@ invocation | default key | default shortcut | behavior / details
 :print_tree | - | pt | print tree and leave broot
 :quit | <kbd>ctrl</kbd><kbd>q</kbd> | q | quit broot
 :refresh | <kbd>F5</kbd> | - | refresh the displayed tree and clears the directory sizes cache
-:root_down | - | - | move tree root down
-:root_up | - | - | move tree root up
+:root_down | <kbd>ctrl</kbd><kbd>↓</kbd> or <kbd>alt</kbd><kbd>↓</kbd> | - | move tree root down
+:root_up | <kbd>ctrl</kbd><kbd>↑</kbd> or <kbd>alt</kbd><kbd>↑</kbd> | - | move tree root up
 :search_again | - | <kbd>ctrl</kbd><kbd>s</kbd> | either put back last search, or search deeper
 :select | - | - | select a path given as argument, if it's in the visible tree
 :select_first | - | - | select the first line
@@ -531,11 +539,12 @@ invocation | default key | default shortcut | behavior / details
 :toggle_device_id | - | - | toggle display of device id (unix only)
 :toggle_files | - | - | toggle showing files (or just folders)
 :toggle_git_file_info | - | - | toggle display of git file information
-:toggle_git_status | - | - | toggle showing only the file which would show up on `git status`
+:toggle_git_status | <kbd>alt</kbd><kbd>g</kbd> | gs | toggle showing only the file which would show up on `git status`
 :toggle_hidden | - | - | toggle display of hidden files (the ones whose name starts with a dot on linux)
 :toggle_ignore | - | - | toggle display of files in .gitignore and .ignore
 :toggle_perm | - | - | toggle display of permissions (not available on Windows)
 :toggle_preview | - | - | toggle display of the preview panel
+:toggle_preview_wrap | - | wrap | toggle line wrapping in previews
 :toggle_root_fs | - | - | toggle showing filesystem info on top
 :toggle_watch | - | - | toggle watching for changes and keeping the tree up to date
 :set_max_depth | - | - | set the maximum directory depth shown
@@ -627,7 +636,7 @@ internal = ":input_selection_cut"
 
 The `:focus` internal has many uses.
 
-It can be used without explicit argument in which case it takes the selection (for example `:!focus` is equivalent to <kbd>ctrl</kbd><kbd>→</kbd>).
+It can be used without explicit argument in which case it takes the selection (for example `:!focus` is equivalent to the `:panel_right` key, <kbd>ctrl</kbd><kbd>→</kbd> or <kbd>alt</kbd><kbd>→</kbd>).
 
 It can be used with an argument, for example you can go to a specific place without leaving broot by typing ` fo /usr/bin` then <kbd>enter</kbd>.
 
